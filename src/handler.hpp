@@ -2,15 +2,14 @@
 #define HANDLER_HPP
 #include "fsm.hpp"
 
-class Entity_map
-{
+class Entity_map {
 public:
-  bool associate_data(Data& data)
-  {
+  Entity_map() { odbg.open("debugdata.dat"); }
+  bool associate_data(Data &data) {
     cout << "associating :" << data.d.transpose() << endl;
     double min_mahalanobis = std::numeric_limits<double>::max();
-    Entity* min_ptr = nullptr;
-    for (auto& e : entities) {
+    Entity *min_ptr = nullptr;
+    for (auto &e : entities) {
       if (e.m->_closed_fs) { // check if model is closed
         if (e.m->_fs(e.p, data.p, Matrix<double, 1, Dynamic>(data.d))(0) <= 0) {
           cout << "point is inside/on closed curve! ";
@@ -42,8 +41,7 @@ public:
     return 0;
   }
 
-  void add_augment(Data& data)
-  {
+  void add_augment(Data &data) {
     if (data.e == nullptr) // safety (can be removed)
       cout << "tried to augment with non-associated data !!!!" << endl;
     else {
@@ -51,33 +49,31 @@ public:
       // iekf.update(data.d, data.p, 0.1);
       // augment with correct iekf
       // probably requires complete restructure to be made efficient
-      for (auto& iekf : iekfs)
+      for (auto &iekf : iekfs)
         if (iekf._e == data.e)
           iekf.add(data.d, data.p);
       // data.e->m->_augment_post(data.e->p, data.e->t, data); // post
     }
   }
-  void run_augment()
-  {
-    for (auto& iekf : iekfs)
-      if (iekf._m0.cols())
+  void run_augment() {
+    for (auto &iekf : iekfs)
+      if (iekf._m0.cols()) {
         iekf.update(0.001);
+        odbg << cnt++ << " " << iekf._e->E.diagonal().transpose() << endl;
+      }
   }
   // attributes
   vector<Entity> entities; // to be processed map
   vector<Iekf> iekfs;      // init when new entity, reset each scan
+  ofstream odbg;
+  int cnt = 0;
 };
 
-class Handler
-{
+class Handler {
 public:
   // non state functions
-  Handler(const vector<Model*> models)
-    : _models(models)
-  {
-  }
-  vector<Data> preprocess_scan(Scan scan, Visualizer& v)
-  {
+  Handler(const vector<Model *> models) : _models(models) {}
+  vector<Data> preprocess_scan(Scan scan, Visualizer &v) {
     vector<Data> d_v1, d_v2;
     cout << "associating one way!!! rows: " << scan.data.rows() << endl;
     for (int i = 0; i < scan.data.rows(); i++) {
@@ -86,9 +82,9 @@ public:
       Data d(vbuf, scan.loc);
       if (map.associate_data(d)) {
         map.add_augment(d);
-        v.add_points(Matrix<double, 1, 2>(d.d({ 0, 1 })), "olive");
+        v.add_points(Matrix<double, 1, 2>(d.d({0, 1})), "olive");
       } else {
-        v.add_points(Matrix<double, 1, 2>(d.d({ 0, 1 })), "red");
+        v.add_points(Matrix<double, 1, 2>(d.d({0, 1})), "red");
         d_v1.push_back(d);
       }
     }
@@ -119,15 +115,13 @@ public:
     return d_v1;
   }
   // state functions
-  void f_begin()
-  {
+  void f_begin() {
     a.flush(_data);
     n = 1;
     state = s_continuous;
     fsms.clear();
   }
-  void f_continuous()
-  {
+  void f_continuous() {
     if (a.check_continuity(_data)) {
       cout << "not continuous!" << endl;
       state = s_begin;
@@ -141,15 +135,14 @@ public:
       f_fsm();
     }
   }
-  void f_fsm()
-  {
+  void f_fsm() {
     // if they are empty, initialize them for all models
     if (fsms.empty())
       for (auto m : _models)
         fsms.push_back(Fsm(m, a));
     // instead check if existing to keep order
     // fsms_are_done.clear();
-    for (auto& fsm : fsms) {
+    for (auto &fsm : fsms) {
 
       State buf_state = fsm.process_measurement(_data);
       if (buf_state == s_fsm_close || buf_state == s_fsm_sink) {
@@ -170,23 +163,20 @@ public:
     if (fsms_are_done.size() == fsms.size()) // not all done
       f_close_fsms(); // we assume that the most accurate model has lowest r
   }
-  void f_close_fsms()
-  {
-    Fsm* min_fsm = fsms_are_done.back();
+  void f_close_fsms() {
+    Fsm *min_fsm = fsms_are_done.back();
     if (min_fsm != nullptr) {
       if (min_fsm->state > 3) { // TODO: make sure we are not adding sink fsms
         // min_fsm->f_least_squares();
         min_fsm->_ekf->_p =
-          min_fsm->_model->_ls(min_fsm->_a.pose, min_fsm->_a.get_mat());
-        min_fsm->_ekf->_E = min_fsm->_model->_dop(min_fsm->_ekf->_p,
-                                                  min_fsm->_a.pose,
-                                                  min_fsm->_a.get_mat(),
-                                                  min_fsm->_model->_dop_sigma);
+            min_fsm->_model->_ls(min_fsm->_a.pose, min_fsm->_a.get_mat());
+        min_fsm->_ekf->_E = min_fsm->_model->_dop(
+            min_fsm->_ekf->_p, min_fsm->_a.pose, min_fsm->_a.get_mat(),
+            min_fsm->_model->_dop_sigma);
         map.entities.push_back(
-          Entity(min_fsm->_a.m, min_fsm->_ekf->_p, min_fsm->_ekf->_E));
+            Entity(min_fsm->_a.m, min_fsm->_ekf->_p, min_fsm->_ekf->_E));
         map.entities.back().m->_init_post(map.entities.back().p, // post
-                                          map.entities.back().t,
-                                          min_fsm->_a);
+                                          map.entities.back().t, min_fsm->_a);
       }
     }
 
@@ -198,35 +188,31 @@ public:
     // call f_begin as to not lose data point for new cycle
     f_begin();
   }
-  void end_scan()
-  {
+  void end_scan() {
     // stl find "minimal" fsm (see < in fsm)
     // first make a vector of only running fsms
     vector<Fsm> running_fsms;
     std::copy_if(
-      fsms.begin(),
-      fsms.end(),
-      std::back_inserter(running_fsms),
-      [](const Fsm& fsm) -> bool { return (fsm.state == s_fsm_strict); });
+        fsms.begin(), fsms.end(), std::back_inserter(running_fsms),
+        [](const Fsm &fsm) -> bool { return (fsm.state == s_fsm_strict); });
     // then least squares
     cout << "running fsms: " << running_fsms.size() << endl;
-    for (auto& fsm : running_fsms) {
+    for (auto &fsm : running_fsms) {
       // fsm.f_least_squares();
       fsm._ekf->_p = fsm._model->_ls(fsm._a.pose, fsm._a.get_mat());
-      fsm._ekf->_E = fsm._model->_dop(
-        fsm._ekf->_p, fsm._a.pose, fsm._a.get_mat(), fsm._model->_dop_sigma);
+      fsm._ekf->_E = fsm._model->_dop(fsm._ekf->_p, fsm._a.pose,
+                                      fsm._a.get_mat(), fsm._model->_dop_sigma);
       cout << "E: " << endl << fsm._ekf->_E.diagonal().transpose() << endl;
     }
 
     // then find the minimum
     vector<Fsm>::iterator min_it =
-      min_element(running_fsms.begin(), running_fsms.end());
+        min_element(running_fsms.begin(), running_fsms.end());
     if (min_it != running_fsms.end()) {
       map.entities.push_back(
-        Entity(min_it->_model, min_it->_ekf->_p, min_it->_ekf->_E));
+          Entity(min_it->_model, min_it->_ekf->_p, min_it->_ekf->_E));
       map.entities.back().m->_init_post(map.entities.back().p, // post
-                                        map.entities.back().t,
-                                        min_it->_a);
+                                        map.entities.back().t, min_it->_a);
     }
     // remove uncertain ellipses
     // std::erase_if(map.entities, [](const auto& e) {
@@ -234,7 +220,7 @@ public:
     //});
     // reset iekfs for map
     map.iekfs.clear();
-    for (auto& e : map.entities)
+    for (auto &e : map.entities)
       map.iekfs.push_back(Iekf(&e));
     // reset attributes
     fsms_are_done.clear();
@@ -244,11 +230,10 @@ public:
   }
 
   // main functions
-  State process_measurement(Data& data, Visualizer& v)
-  {
+  State process_measurement(Data &data, Visualizer &v) {
     //
     cout << "ellipses so far: " << endl;
-    for (auto& e : map.entities)
+    for (auto &e : map.entities)
       if (e.m->_model_index != 1)
         cout << "p: " << e.p.transpose() << endl
              << "E: " << e.E.diagonal().transpose() << endl;
@@ -264,24 +249,24 @@ public:
       v.add_points(Matrix<double, 1, 2>(data.d({ 0, 1 })), "olive");*/
     //
     switch (state) {
-      case s_begin:
-        cout << "begin nsm" << endl;
-        f_begin();
-        break;
-      case s_continuous:
-        cout << "nsm continuous, n=" << n << endl;
-        f_continuous();
-        break;
-      case s_fsm:
-        cout << "nsm fsm, n=" << n << endl;
-        f_fsm();
-        break;
-      default:;
+    case s_begin:
+      cout << "begin nsm" << endl;
+      f_begin();
+      break;
+    case s_continuous:
+      cout << "nsm continuous, n=" << n << endl;
+      f_continuous();
+      break;
+    case s_fsm:
+      cout << "nsm fsm, n=" << n << endl;
+      f_fsm();
+      break;
+    default:;
     }
     return state;
   }
   // attributes
-  const vector<Model*> _models; // permanent
+  const vector<Model *> _models; // permanent
   // VectorXd _data, _pose;         // buffers, pose should stay during scan
   Data _data;
   unsigned short n = 0;
@@ -289,7 +274,8 @@ public:
   Entity_map map;
   Aggregate a; // buffer aggregate
   vector<Fsm> fsms;
-  vector<Fsm*> fsms_are_done;
+  vector<Fsm *> fsms_are_done;
+  ofstream odbg;
 };
 
 #endif // HANDLER_HPP

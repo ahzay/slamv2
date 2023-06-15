@@ -1,0 +1,4 @@
+{
+    "name": "C++ Build Environment",
+    "dockerFile": "/home/user/Documents/slamv2/env/archlinux-dev/Dockerfile"
+  }  

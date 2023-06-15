@@ -1,8 +1,8 @@
 FROM docker.io/archlinux/archlinux:latest
 ENV MAKEFLAGS="-j$(nproc)"
-RUN pacman -Syu --noconfirm 
+#RUN pacman -Syu --noconfirm 
 # Install base-devel and git for AUR helper
-RUN pacman -S --noconfirm base-devel git parallel gnuplot
+RUN pacman -Syu --noconfirm base-devel git parallel gnuplot gdb
 
 # Create a new user for the AUR helper
 RUN useradd -m builder && \

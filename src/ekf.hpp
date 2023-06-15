@@ -210,9 +210,11 @@ public:
     // K = _e->E * H.transpose() * S.inverse();
     cout << "S sum: " << S.sum() << endl;
     cout << " H sum: " << H.array().abs().sum() << endl;
-    K = _e->E * (H.array().colwise() / S.array()).transpose().matrix();
-    // K = _e->E * H.transpose() * S.inverse();
-
+    // K = _e->E * (H.array().colwise() / S.array()).transpose().matrix();
+    //  K = _e->E * H.transpose() * S.inverse();
+    K = MatrixXd::Zero(6, m);
+    for (i = 0; i < m; i++)
+      K += _e->E * H.transpose() / S(i);
     //_e->E = (_e->m->I - K * H) * _e->E;
     //_e->E = _e->E + H*K*J_e->m->_Q_a;
     L = (_e->m->I - K * H); // *_e->E;
@@ -238,6 +240,7 @@ public:
   MatrixXd H, J, K, L;
   VectorXd _pose, _pk, _p0, _r, _dr;
   Matrix<double, Dynamic, 1> S;
+  ofstream odbg;
 };
 
 #endif // EKF_HPP

@@ -10,16 +10,14 @@ namespace fsm = boost::filesystem;
 using namespace Eigen;
 
 //
-class Scan
-{
+class Scan {
   // Matrix<double, Dynamic, 2> pts, mes;
 public:
   Matrix<double, Dynamic, 4> data; // x, y, d, an
   Vector<double, 2> loc;
   Vector<double, 2> odomloc;
   double ori;
-  void write_scan(int n)
-  {
+  void write_scan(int n) {
     ofstream f("scan_" + to_string(n) + ".csv");
     // first line: posx,posy,ori,rows
     f << loc(0) << "," << loc(1) << "," << ori << "," << data.rows() << endl;
@@ -29,8 +27,8 @@ public:
         << data(i, 3) << endl;
     f.close();
   }
-  void read_scan(string dir, int n, int z, float mult)
-  { // z: to remove from each side
+  void read_scan(string dir, int n, int z,
+                 float mult) { // z: to remove from each side
     char cbuf;
     double dbuf;
     ifstream f(dir + "/combined_" + to_string(n) + ".csv");
@@ -58,7 +56,7 @@ public:
     // mult and error
     for (int i = 0; i < data.rows(); i++) {
       float error = (-0.01 + (rand() / (RAND_MAX / 0.02)));
-      cout << "error: " << error << endl;
+      // cout << "error: " << error << endl;
       data.col(2)(i) += error;
     }
     data.col(2) *= mult;
@@ -73,18 +71,14 @@ public:
 };
 
 // angle constraint 0, 2pi
-double
-ancnstr(double x)
-{
+double ancnstr(double x) {
   x = fmod(x, 2 * M_PI);
   if (x < 0)
     x += 2 * M_PI;
   return x;
 }
 
-bool
-compare_angle(const VectorXd& lhs, const VectorXd& rhs)
-{
+bool compare_angle(const VectorXd &lhs, const VectorXd &rhs) {
   return lhs(3) < rhs(3);
 }
 #endif // PREPROC_HPP
