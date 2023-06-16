@@ -89,7 +89,7 @@ isPsd(const MatrixT& A)
   // }
   const auto ldlt = A.template selfadjointView<Eigen::Upper>().ldlt();
   if (ldlt.info() == Eigen::NumericalIssue || !ldlt.isPositive()) {
-    cout << "eigenvalues: " << endl << A.eigenvalues() << endl;
+    cout << "eigenvalues: " << endl << A.eigenvalues().transpose() << endl;
     return false;
   }
   return true;
@@ -504,16 +504,16 @@ struct Cost_0
              p[5]) -
          1.)); // +
                // 1.);
-    // residual[0] *= 10.;
-    //   measurement variation constraint
+    residual[0] *= 1000.;
+    //    measurement variation constraint
     residual[1] = abs((d[0] - _ap_d) * (d[0] - _ap_d) / _sigma_d);
-    residual[1] *= 1000;
-    // parameter variation constraint
+    // residual[1] *= 100000;
+    //   parameter variation constraint
     Eigen::Map<const Eigen::Vector<T, 6>> pv(p);
     Eigen::Vector<T, 6> dp = pv - _ap_p;
     residual[2] = abs((dp.transpose() * _ap_dop.inverse() * dp)(0));
-    residual[2] *= 1000;
-    // area
+    // residual[2] *= 100000;
+    //   area
     residual[3] = abs(pow((p[4]) * (p[3]), 1));
     return true;
   }

@@ -216,7 +216,8 @@ public:
     cout << "J col-rank: " << rowRank(J.transpose()) << endl;
     S = H * _e->E * H.transpose() + J * _e->m->_W_a * J.transpose();
     Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qr(S);
-    cout << "S rank: " << qr.rank() << endl;
+    cout << "S invertible: " << qr.isInvertible() << endl;
+    cout << "S determinant: " << qr.absDeterminant() << endl;
     cout << "S row-rank: " << rowRank(S) << endl;
     cout << "S col-rank: " << rowRank(S.transpose()) << endl;
     //   alt S
@@ -229,10 +230,10 @@ public:
     //           S.norm()
     //      << endl;
     // K = _e->E * H.transpose() * S.inverse();
-    cout << "S sum: " << S.sum() << endl;
+    cout << "S determinant: " << S.sum() << endl;
     cout << " H sum: " << H.array().abs().sum() << endl;
     // K = _e->E * (H.array().colwise() / S.array()).transpose().matrix();
-    K = _e->E * H.transpose() * S.inverse();
+    /*K = _e->E * H.transpose() * S.diagonal().asDiagonal().inverse();
     // K = MatrixXd::Zero(6, m);
     // for (i = 0; i < m; i++)
     //  K += _e->E * H.transpose() / S(i);
@@ -241,11 +242,28 @@ public:
     L = (_e->m->I - K * H); // *_e->E;
     // system propagation
     //_e->E = _e->E + _e->m->_Q_a;
+    cout << "E Eigenvalues before: " << _e->E.eigenvalues() << endl;
+    cout << "KJWJtKt Eigenvalues: "
+         << (K * J * _e->m->_W_a * J.transpose() * K.transpose())
+              .eigenvalues()
+              .transpose()
+         << endl;
+    cout << "LELt Eigenvalues: "
+         << (L * _e->E * L.transpose()).eigenvalues().transpose() << endl;
     _e->E = L * _e->E * L.transpose() +
-            K * J * _e->m->_W_a * J.transpose() * K.transpose();
-    _e->E = (_e->E + _e->E.transpose()) / 2;
+            K * J * _e->m->_W_a * J.transpose() * K.transpose();*/
+    // this kind of "works"
+    for (int i = 0; i < H.rows(); i++) {
+      K = _e->E * H(i, all).transpose() / S(i, i);
+      L = _e->m->I - K * H(i, all);
+      _e->E = L * _e->E * L.transpose() + K * J(i, all) * _e->m->_W_a *
+                                            J(i, all).transpose() *
+                                            K.transpose();
+      _e->E = (_e->E + _e->E.transpose()) / 2;
+    }
+    cout << "E Eigenvalues after: " << _e->E.eigenvalues().transpose() << endl;
     cout << "E: " << endl << _e->E.diagonal().transpose() << endl;
-    cout << "E-VAL: " << _e->E.diagonal().array().abs().sum() << endl;
+    // cout << "E-VAL: " << _e->E.diagonal().array().abs().sum() << endl;
     if (!isPsd(_e->E)) {
       throw std::runtime_error("Non positive semi-definite matrix!");
     }
