@@ -1,10 +1,17 @@
 #ifndef EKF_HPP
 #define EKF_HPP
 #include "model.hpp"
-class Ekf { // have to update to use Data class
+class Ekf
+{ // have to update to use Data class
 public:
-  Ekf(const Model *m, VectorXd p, MatrixXd E) : _model(m), _p(p), _E(E) {}
-  int update(const VectorXd data, const VectorXd pose, const double tol) {
+  Ekf(const Model* m, VectorXd p, MatrixXd E)
+    : _model(m)
+    , _p(p)
+    , _E(E)
+  {
+  }
+  int update(const VectorXd data, const VectorXd pose, const double tol)
+  {
     cout << "  in ekf" << endl;
     cout << "   E:" << endl << _E.diagonal().transpose() << endl;
     cout << "   p:" << _p.transpose() << endl;
@@ -55,18 +62,21 @@ public:
   MatrixXd H, J, K;
   double _mahalanobis;
   VectorXd _r;
-  const Model *_model;
+  const Model* _model;
 };
 
-class Iekf {
+class Iekf
+{
 public:
   // E is Sigma
-  Iekf(Entity *e) {
+  Iekf(Entity* e)
+  {
     _e = e;
     _m0.conservativeResize(4, 0); // i data size, j data num
     //_p0.conservativeResize(e->m->_parameter_count, 0); // j, data num
   }
-  void add(const VectorXd data, const VectorXd pose) {
+  void add(const VectorXd data, const VectorXd pose)
+  {
     _pose = pose;
     _m0.conservativeResize(NoChange, _m0.cols() + 1);
     _m0(all, last) = data;
@@ -76,7 +86,8 @@ public:
     _mk = _m0;
     _pk = _p0;
   }
-  int update(const double tol) {
+  int update(const double tol)
+  {
     // ofstream o1("data1.dat");
     //  ofstream o2("data2.dat");
     const int m = _m0.cols();
@@ -189,20 +200,30 @@ public:
   //         K * J * _e->m->_W_a * J.transpose() * K.transpose();
   */
     VectorXd buf =
-        _e->m->_ap_ls(_e->p, _e->E, _pose, _m0.transpose(), _e->m->_dop_sigma);
+      _e->m->_ap_ls(_e->p, _e->E, _pose, _m0.transpose(), _e->m->_dop_sigma);
     _e->p = buf(seq(0, 5));
     // cout << "mk before" << _mk.row(2)(seq(0, 10)) << endl;
     _mk.row(2) = buf(seq(6, last));
     // cout << "mk after" << _mk.row(2)(seq(0, 10)) << endl;
     _df = _e->m->_dfs(_e->p, _pose, _mk.transpose());
     H = _df(all, _e->m->_dfs_parameter_indexes);
+    // cout << "H: " << endl << H << endl;
+    cout << "m: " << m << endl;
+    cout << "H row-rank: " << rowRank(H) << endl;
+    cout << "H col-rank: " << rowRank(H.transpose()) << endl;
     J = _df(all, _e->m->_dfs_measurement_error_indexes);
-    // S = (H * _e->E * H.transpose() + J * _e->m->_W_a * J.transpose());
+    cout << "J row-rank: " << rowRank(J) << endl;
+    cout << "J col-rank: " << rowRank(J.transpose()) << endl;
+    S = H * _e->E * H.transpose() + J * _e->m->_W_a * J.transpose();
+    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qr(S);
+    cout << "S rank: " << qr.rank() << endl;
+    cout << "S row-rank: " << rowRank(S) << endl;
+    cout << "S col-rank: " << rowRank(S.transpose()) << endl;
     //   alt S
-    S.resize(m);
-    for (i = 0; i < m; i++)
-      S(i) = (H(i, all) * _e->E * H(i, all).transpose() +
-              J(i, all) * _e->m->_W_a * J(i, all).transpose())(0);
+    // S.resize(m);
+    // for (i = 0; i < m; i++)
+    //  S(i) = (H(i, all) * _e->E * H(i, all).transpose() +
+    //          J(i, all) * _e->m->_W_a * J(i, all).transpose())(0);
     // cout << "S cond: "
     //      << S.completeOrthogonalDecomposition().pseudoInverse().norm() *
     //           S.norm()
@@ -211,10 +232,10 @@ public:
     cout << "S sum: " << S.sum() << endl;
     cout << " H sum: " << H.array().abs().sum() << endl;
     // K = _e->E * (H.array().colwise() / S.array()).transpose().matrix();
-    //  K = _e->E * H.transpose() * S.inverse();
-    K = MatrixXd::Zero(6, m);
-    for (i = 0; i < m; i++)
-      K += _e->E * H.transpose() / S(i);
+    K = _e->E * H.transpose() * S.inverse();
+    // K = MatrixXd::Zero(6, m);
+    // for (i = 0; i < m; i++)
+    //  K += _e->E * H.transpose() / S(i);
     //_e->E = (_e->m->I - K * H) * _e->E;
     //_e->E = _e->E + H*K*J_e->m->_Q_a;
     L = (_e->m->I - K * H); // *_e->E;
@@ -235,11 +256,11 @@ public:
   // Matrix<double, Dynamic, 12> df;
   // attributes
   int j, i;
-  Entity *_e;
-  MatrixXd _mk, _m0, _df; //, S;
+  Entity* _e;
+  MatrixXd _mk, _m0, _df, S;
   MatrixXd H, J, K, L;
   VectorXd _pose, _pk, _p0, _r, _dr;
-  Matrix<double, Dynamic, 1> S;
+  // Matrix<double, Dynamic, 1> S;
   ofstream odbg;
 };
 
