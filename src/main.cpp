@@ -104,9 +104,7 @@ using namespace std;
     v.show();
   }*/
 
-void
-run(int argc, char* argv[])
-{
+void run(int argc, char *argv[]) {
   int nscans = 1;
   if (argc < 8) // nscans,z,N,stride, dist, an tol, env mult, data folder
     exit(1);
@@ -119,17 +117,9 @@ run(int argc, char* argv[])
   for (int i = 0; i < nscans; i++)
     scans[i].read_scan(string(argv[8]), i, atoi(argv[2]), mult);
 
-  Model* ellipse_model1 = new Model(fsn_0,
-                                    dfsn_0,
-                                    dop_0,
-                                    ls_0,
-                                    ap_ls_0,
-                                    safety_0,
-                                    dst_0,
-                                    init_post_0,
-                                    associate_0,
-                                    augment_post_0,
-                                    string(argv[8]) + "/model_e_real.txt");
+  Model *ellipse_model1 = new Model(
+      fsn_0, dfsn_0, dop_0, ls_0, ap_ls_0, safety_0, dst_0, init_post_0,
+      associate_0, augment_post_0, string(argv[8]) + "/model_e_real.txt");
   /*Model* ellipse_model2 = new Model(fsn_0,
                                     dfsn_0,
                                     dop_0,
@@ -167,7 +157,7 @@ run(int argc, char* argv[])
   // e1 0.3 0.7
   // e2 0.8 1.2
   // e3 1.3 1.7
-  vector<Model*> models;
+  vector<Model *> models;
   models.push_back(ellipse_model1);
   // models.push_back(ellipse_model2);
   // models.push_back(ellipse_model3);
@@ -176,7 +166,7 @@ run(int argc, char* argv[])
   // v.add_points(scans.back().data(all, {0, 1}), "r."); // viz
   int n = 0;
   int cnt = 0;
-  for (auto& scan : scans) {
+  for (auto &scan : scans) {
     Visualizer v(cnt++);
     // scan.write_scan(n++);
     cout << "*********************************************************" << endl;
@@ -186,7 +176,7 @@ run(int argc, char* argv[])
     // v.add_points(scan.data(all, {0, 1}), "r."); // viz
     Matrix<double, 1, 2> m;
     m << scan.loc(0), scan.loc(1);
-    v.add_points(m, "blue");
+
     // for (int l = 0; l < scan.data.rows(); l++)
     //   v.add_points(Matrix<double, 1, 2>(scan.data(l, { 0, 1 })), "red"); //
     //   viz
@@ -223,15 +213,16 @@ run(int argc, char* argv[])
     }
     // scan over
     h.end_scan();
-    for (auto& e : h.map.entities) {
+    for (auto &e : h.map.entities) {
       if (e.p.size() == 6)
         v.add_ellipse(e.p);
       if (e.p.size() == 2)
         v.add_segment(e.p, e.t);
     }
+    v.add_points(m, "blue");
     v.save();
     cout << "*********************************************************" << endl;
-    for (auto& e : h.map.entities)
+    for (auto &e : h.map.entities)
       cout << e.p.transpose() << endl;
     cout << "**************************DONE***************************" << endl;
   }
@@ -243,9 +234,7 @@ run(int argc, char* argv[])
   }*/
   // v.show();
 }
-int
-main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   run(argc, argv);
   // render plots
   system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");

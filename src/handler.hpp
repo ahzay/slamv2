@@ -88,20 +88,20 @@ public:
         d_v1.push_back(d);
       }
     }
-    // grid for association viz
-    /*for (double i = -11; i < 12; i += 0.2)
+    // debug grid for association viz
+    for (double i = -11; i < 12; i += 0.2)
       for (double j = -20; j < 21; j += 0.2) {
         // transform into d an
         double relx = i - scan.loc(0);
         double rely = j - scan.loc(1);
         double an = atan2(rely, relx);
         double d = sqrt(relx * relx + rely * rely);
-        Data dat(Vector<double, 4>({ i, j, d, an }), scan.loc);
+        Data dat(Vector<double, 4>({i, j, d, an}), scan.loc);
         if (map.associate_data(dat))
-          v.add_points(Matrix<double, 1, 2>(dat.d({ 0, 1 })), "purple");
+          v.add_points(Matrix<double, 1, 2>(dat.d({0, 1})), "purple");
         else
-          v.add_points(Matrix<double, 1, 2>(dat.d({ 0, 1 })), "yellow");
-      }*/
+          v.add_points(Matrix<double, 1, 2>(dat.d({0, 1})), "yellow");
+      }
 
     /*cout << "other way!!!" << endl;
     for (int i = d_v1.size() - 1; i >= 0; i--) {
