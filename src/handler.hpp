@@ -59,7 +59,10 @@ public:
     for (auto &iekf : iekfs)
       if (iekf._m0.cols()) {
         iekf.update(0.001);
-        odbg << cnt++ << " " << iekf._e->E.diagonal().transpose() << endl;
+        odbg << cnt++ << " "
+             << iekf._e->E.diagonal().transpose() -
+                    iekf._e->m->_Q_a.diagonal().transpose()
+             << endl;
       }
   }
   // attributes
@@ -89,7 +92,7 @@ public:
       }
     }
     // debug grid for association viz
-    for (double i = -11; i < 12; i += 0.2)
+    /*for (double i = -11; i < 12; i += 0.2)
       for (double j = -20; j < 21; j += 0.2) {
         // transform into d an
         double relx = i - scan.loc(0);
@@ -101,7 +104,7 @@ public:
           v.add_points(Matrix<double, 1, 2>(dat.d({0, 1})), "purple");
         else
           v.add_points(Matrix<double, 1, 2>(dat.d({0, 1})), "yellow");
-      }
+      }*/
 
     /*cout << "other way!!!" << endl;
     for (int i = d_v1.size() - 1; i >= 0; i--) {

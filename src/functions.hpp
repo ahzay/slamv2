@@ -325,8 +325,8 @@ struct LossFunction_0 {
     T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
     residual[0] = // log(
         pow((1. + p[4]) * (1. + p[3]),
-            2.) // penalty on area
-                // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
+            2.1) // penalty on area
+                 // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
         *
         (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),
              p[5]) -
@@ -374,11 +374,15 @@ VectorXd ls_0(const VectorXd loc, const MatrixXd data) {
     problem[i].SetParameterUpperBound(pa[i], 3, 30);   // a
     problem[i].SetParameterUpperBound(pa[i], 4, 30);   // b
     problem[i].SetParameterUpperBound(pa[i], 5, 1.7);  // eps
-                                                       // avoids auto-occlusion
-    // problem[i].SetParameterUpperBound(pa[i], 0, max(p0[9], p0[6]));  // x
-    // problem[i].SetParameterLowerBound(pa[i], 0, min(p0[9], p0[6]));  // x
-    // problem[i].SetParameterUpperBound(pa[i], 1, max(p0[10], p0[7])); // y
-    // problem[i].SetParameterLowerBound(pa[i], 1, min(p0[10], p0[7])); // y
+    // avoids auto-occlusion
+    if (loc[0] - p0[9] > 0) // robot on right of shape
+      problem[i].SetParameterUpperBound(pa[i], 0, p0[9]); // x
+    else
+      problem[i].SetParameterLowerBound(pa[i], 0, p0[9]);
+    if (loc[1] - p0[10] > 0)                               // robot above shape
+      problem[i].SetParameterUpperBound(pa[i], 1, p0[10]); // y
+    else
+      problem[i].SetParameterLowerBound(pa[i], 1, p0[10]);
   }
   ceres::Solver::Options options;
   options.num_threads = 24;
@@ -440,15 +444,15 @@ struct Cost_0 {
     T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
     residual[0] = // log(
                   // penalty on area
-        abs(pow((1. + p[4]) * (1. + p[3]), 1.)) *
+        abs(pow((1. + p[4]) * (1. + p[3]), 0.5)) *
         //* pow(2, abs(p[5] - 1.0)) * // penalise eps, pow 1 = no
-        //  penalty
+        //   penalty
         abs((pow(pow(pow(f1, 2.0), (1.0 / p[5])) +
                      pow(pow(f2, 2.0), (1.0 / p[5])),
                  p[5]) -
              1.)); // +
                    // 1.);
-    residual[0] *= 1000.;
+    residual[0] *= 1.;
     //    measurement variation constraint
     residual[1] = abs((d[0] - _ap_d) * (d[0] - _ap_d) / _sigma_d);
     // residual[1] *= 100000;
@@ -474,8 +478,11 @@ VectorXd ap_ls_0(const VectorXd ap_p,   // apriori params
                  const VectorXd loc, const MatrixXd xydan,
                  const double sigma_d) // measurements
 {
+
   VectorXd d = xydan(all, 2);
   VectorXd an = xydan(all, 3);
+  VectorXd x = loc[0] + d.array() * an.array().cos();
+  VectorXd y = loc[1] + d.array() * an.array().sin();
   // TODO: GENERALIZE FOR N-DIM MEASUREMENTS
   ceres::Problem problem;
   // parameter count is the number of model params + number of measurements
@@ -502,6 +509,20 @@ VectorXd ap_ls_0(const VectorXd ap_p,   // apriori params
   problem.SetParameterUpperBound(n_p, 3, 30);   // a
   problem.SetParameterUpperBound(n_p, 4, 30);   // b
   problem.SetParameterUpperBound(n_p, 5, 1.7);  // eps
+  // avoids auto-occlusion, only if enough points
+  // if enough points we assume that we see enough of the ellipse
+  // for an accurate mean
+  // TODO: change to N
+  if (x.size() > 35) {
+    if (loc[0] - x.mean() > 0) // robot on right of shape
+      problem.SetParameterUpperBound(n_p, 0, x.mean()); // x
+    else
+      problem.SetParameterLowerBound(n_p, 0, x.mean());
+    if (loc[1] - y.mean() > 0)                          // robot above shape
+      problem.SetParameterUpperBound(n_p, 1, y.mean()); // y
+    else
+      problem.SetParameterLowerBound(n_p, 1, y.mean());
+  }
   // solve
   ceres::Solver::Options options;
   options.num_threads = 24;

@@ -1,17 +1,10 @@
 #ifndef EKF_HPP
 #define EKF_HPP
 #include "model.hpp"
-class Ekf
-{ // have to update to use Data class
+class Ekf { // have to update to use Data class
 public:
-  Ekf(const Model* m, VectorXd p, MatrixXd E)
-    : _model(m)
-    , _p(p)
-    , _E(E)
-  {
-  }
-  int update(const VectorXd data, const VectorXd pose, const double tol)
-  {
+  Ekf(const Model *m, VectorXd p, MatrixXd E) : _model(m), _p(p), _E(E) {}
+  int update(const VectorXd data, const VectorXd pose, const double tol) {
     cout << "  in ekf" << endl;
     cout << "   E:" << endl << _E.diagonal().transpose() << endl;
     cout << "   p:" << _p.transpose() << endl;
@@ -62,21 +55,18 @@ public:
   MatrixXd H, J, K;
   double _mahalanobis;
   VectorXd _r;
-  const Model* _model;
+  const Model *_model;
 };
 
-class Iekf
-{
+class Iekf {
 public:
   // E is Sigma
-  Iekf(Entity* e)
-  {
+  Iekf(Entity *e) {
     _e = e;
     _m0.conservativeResize(4, 0); // i data size, j data num
     //_p0.conservativeResize(e->m->_parameter_count, 0); // j, data num
   }
-  void add(const VectorXd data, const VectorXd pose)
-  {
+  void add(const VectorXd data, const VectorXd pose) {
     _pose = pose;
     _m0.conservativeResize(NoChange, _m0.cols() + 1);
     _m0(all, last) = data;
@@ -86,8 +76,7 @@ public:
     _mk = _m0;
     _pk = _p0;
   }
-  int update(const double tol)
-  {
+  int update(const double tol) {
     // ofstream o1("data1.dat");
     //  ofstream o2("data2.dat");
     const int m = _m0.cols();
@@ -200,7 +189,7 @@ public:
   //         K * J * _e->m->_W_a * J.transpose() * K.transpose();
   */
     VectorXd buf =
-      _e->m->_ap_ls(_e->p, _e->E, _pose, _m0.transpose(), _e->m->_dop_sigma);
+        _e->m->_ap_ls(_e->p, _e->E, _pose, _m0.transpose(), _e->m->_dop_sigma);
     _e->p = buf(seq(0, 5));
     // cout << "mk before" << _mk.row(2)(seq(0, 10)) << endl;
     _mk.row(2) = buf(seq(6, last));
@@ -240,8 +229,7 @@ public:
     //_e->E = (_e->m->I - K * H) * _e->E;
     //_e->E = _e->E + H*K*J_e->m->_Q_a;
     L = (_e->m->I - K * H); // *_e->E;
-    // system propagation
-    //_e->E = _e->E + _e->m->_Q_a;
+
     cout << "E Eigenvalues before: " << _e->E.eigenvalues() << endl;
     cout << "KJWJtKt Eigenvalues: "
          << (K * J * _e->m->_W_a * J.transpose() * K.transpose())
@@ -257,8 +245,8 @@ public:
       K = _e->E * H(i, all).transpose() / S(i, i);
       L = _e->m->I - K * H(i, all);
       _e->E = L * _e->E * L.transpose() + K * J(i, all) * _e->m->_W_a *
-                                            J(i, all).transpose() *
-                                            K.transpose();
+                                              J(i, all).transpose() *
+                                              K.transpose();
       _e->E = (_e->E + _e->E.transpose()) / 2;
     }
     cout << "E Eigenvalues after: " << _e->E.eigenvalues().transpose() << endl;
@@ -267,6 +255,8 @@ public:
     if (!isPsd(_e->E)) {
       throw std::runtime_error("Non positive semi-definite matrix!");
     }
+    // system propagation
+    _e->E = _e->E + _e->m->_Q_a;
     return 0;
   }
 
@@ -274,7 +264,7 @@ public:
   // Matrix<double, Dynamic, 12> df;
   // attributes
   int j, i;
-  Entity* _e;
+  Entity *_e;
   MatrixXd _mk, _m0, _df, S;
   MatrixXd H, J, K, L;
   VectorXd _pose, _pk, _p0, _r, _dr;

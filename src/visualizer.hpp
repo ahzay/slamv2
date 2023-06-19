@@ -16,49 +16,49 @@ public:
 };
 Visualizer::Visualizer(int cnt) {
   of.open(to_string(cnt) + ".gpt");
-  of //<< "set term pngcairo size 1000,2000 enhanced font \"Times,12\" "
+  of << "set term pngcairo size 1000,2000 enhanced font \"Times,12\" "
+     << endl
+     //<< "set term pngcairo size 1000,1000 enhanced font \"Times,12\" " << endl
+     << "set size ratio -1 "
+     << endl
+     //<< "set contour" << endl
+     << "set multiplot"
+     << endl
+     //<< "set cntrparam levels discrete 0 " << endl
+     //<< "set view map" << endl
+     //<< "unset surface " << endl
+     << "set nokey "
+     << endl
+     //<< "set dgrid3d 1000,1000 qnorm 2"
+     << endl
+     << "set samples 2000" << endl
+     << "set isosamples 10000,10000 " << endl
+     << "set xrange [-12:12] " << endl
+     << "set yrange [-21:21] "
      //<< endl
-      << "set term pngcairo size 1000,1000 enhanced font \"Times,12\" " << endl
-      << "set size ratio -1 "
-      << endl
-      //<< "set contour" << endl
-      << "set multiplot"
-      << endl
-      //<< "set cntrparam levels discrete 0 " << endl
-      //<< "set view map" << endl
-      //<< "unset surface " << endl
-      << "set nokey "
-      << endl
-      //<< "set dgrid3d 1000,1000 qnorm 2"
-      << endl
-      << "set samples 2000" << endl
-      << "set isosamples 10000,10000 " << endl
-      << "set xrange [-12:12] " << endl
-      << "set yrange [-21:21] "
-      << endl
-      //<< "set xrange [-5:5] " << endl
-      //<< "set yrange [-15:-5] "
-      //<< endl
-      //<< "set xrange [-8:1] " << endl
-      //<< "set yrange [-21:-12] " << endl
-      << "set ytics 0.5" << endl
-      << "set xtics 0.5" << endl
-      << "set grid" << endl
-      << "set grid mytics" << endl
-      << "set grid mxtics"
-      << endl
-      //<< "set lmargin 0" << endl
-      //<< "set bmargin 0" << endl
-      //<< "set tmargin 0" << endl
-      //<< "set rmargin 0" << endl
-      << "se_x(t) = xc + a * cos(th) * sgn(cos(t)) * abs(cos(t))**(e) - b "
-         "* sin(th) * sgn(sin(t)) * abs(sin(t))**(e)"
-      << endl
-      << "se_y(t) = yc + a * sin(th) * sgn(cos(t)) * abs(cos(t))**(e) + b "
-         "* cos(th) * sgn(sin(t)) * abs(sin(t))**(e)"
-      << endl
-      << "set parametric" << endl
-      << "set trange [0.001:2*pi-0.001]" << endl;
+     //<< "set xrange [-5:5] " << endl
+     //<< "set yrange [-15:-5] "
+     << endl
+     //<< "set xrange [-8:1] " << endl
+     //<< "set yrange [-21:-12] " << endl
+     << "set ytics 0.5" << endl
+     << "set xtics 0.5" << endl
+     << "set grid" << endl
+     << "set grid mytics" << endl
+     << "set grid mxtics"
+     << endl
+     //<< "set lmargin 0" << endl
+     //<< "set bmargin 0" << endl
+     //<< "set tmargin 0" << endl
+     //<< "set rmargin 0" << endl
+     << "se_x(t) = xc + a * cos(th) * sgn(cos(t)) * abs(cos(t))**(e) - b "
+        "* sin(th) * sgn(sin(t)) * abs(sin(t))**(e)"
+     << endl
+     << "se_y(t) = yc + a * sin(th) * sgn(cos(t)) * abs(cos(t))**(e) + b "
+        "* cos(th) * sgn(sin(t)) * abs(sin(t))**(e)"
+     << endl
+     << "set parametric" << endl
+     << "set trange [0.001:2*pi-0.001]" << endl;
 }
 void Visualizer::add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts,
                             string color) {
