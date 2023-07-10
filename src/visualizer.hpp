@@ -9,7 +9,7 @@ class Visualizer {
 public:
     Visualizer(int cnt);
 
-    void add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts, string color);
+    void add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts, const string& color);
 
     void add_ellipse(Eigen::VectorXd p);
 
@@ -68,9 +68,9 @@ Visualizer::Visualizer(int cnt) {
 }
 
 void Visualizer::add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts,
-                            string color) {
+                            const string& color) {
     // of << "unset border\n unset xtics\n unset ytics\n";
-    of << "plot \"-\" w p ls 7 lw 0.05 lc rgb \"" << color << "\"" << endl;
+    of << R"(plot "-" w p ls 7 lw 0.05 lc rgb ")" << color << "\"" << endl;
     for (int i = 0; i < pts.rows(); i++)
         of << pts(i, 0) << " " << pts(i, 1) << endl;
     of << "e" << endl;

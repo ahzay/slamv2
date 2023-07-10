@@ -109,16 +109,16 @@ void run(int argc, char *argv[]) {
     int nscans = 1;
     if (argc < 8) // nscans,z,N,stride, dist, an tol, env mult, data folder
         exit(1);
-    nscans = atoi(argv[1]);
-    N = atoi(argv[3]);
-    float mult = atof(argv[7]);
-    angle_tolerance = atof(argv[6]);
-    dist_tolerance = atof(argv[5]);
+    nscans = stoi(argv[1]);
+    N = stoi(argv[3]);
+    float mult = strtof(argv[7],nullptr);
+    angle_tolerance = strtof(argv[6],nullptr);
+    dist_tolerance = strtof(argv[5],nullptr);
     vector<Scan> scans(nscans);
     for (int i = 0; i < nscans; i++)
-        scans[i].read_scan(string(argv[8]), i, atoi(argv[2]), mult);
+        scans[i].read_scan(string(argv[8]), i, stoi(argv[2]), mult);
 
-    Model *ellipse_model1 = new Model(
+    auto *ellipse_model1 = new Model(
             fsn_0, dfsn_0, dop_0, ls_0, ap_ls_0, safety_0, dst_0, init_post_0,
             associate_0, augment_post_0, string(argv[8]) + "/model_e_real.txt");
     /*Model* ellipse_model2 = new Model(fsn_0,
@@ -189,15 +189,15 @@ void run(int argc, char *argv[]) {
                 << endl
                 << "datafile = \"debugdata.dat\"" << endl
                 << "set logscale y" << endl
-                << "plot datafile using 1:2 with lines title \'x\', \\" << endl
-                << "datafile using 1:3 with lines title \'y\', \\" << endl
-                << "datafile using 1:4 with lines title \'t\', \\" << endl
-                << "datafile using 1:5 with lines title \'a\', \\" << endl
-                << "datafile using 1:6 with lines title \'b\', \\" << endl
+                << R"(plot datafile using 1:2 with lines title 'x', \)" << endl
+                << R"(datafile using 1:3 with lines title 'y', \)" << endl
+                << R"(datafile using 1:4 with lines title 't', \)" << endl
+                << R"(datafile using 1:5 with lines title 'a', \)" << endl
+                << R"(datafile using 1:6 with lines title 'b', \)" << endl
                 << "datafile using 1:7 with lines title \'e\'" << endl
                 << "set key outside" << endl;;
 
-        for (int i = 0; i < preprocessed_scan.size(); i += atoi(argv[4])) {
+        for (int i = 0; i < preprocessed_scan.size(); i += stoi(argv[4])) {
             printf("data %i:\n", k++);
             VectorXd measurement = preprocessed_scan[i].d;
             cout << "*********************************************************"

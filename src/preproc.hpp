@@ -31,7 +31,7 @@ public:
         f.close();
     }
 
-    void read_scan(string dir, int n, int z,
+    void read_scan(const string &dir, int n, int z,
                    float mult) { // z: to remove from each side
         char cbuf;
         double dbuf;
@@ -53,17 +53,17 @@ public:
         data.conservativeResize(0, NoChange);
         // get data
         for (int i = 0; i < rows; i++) {
-            int j = data.rows();
+            long j = data.rows();
             Vector<double, 4> bvec;
             f >> bvec(0) >> cbuf >> bvec(1) >> cbuf >> bvec(2) >> cbuf >> bvec(3);
-            if (bvec(2) > 0 && bvec(2) < 5 || 0) { // restriction on min/max distance
+            if (bvec(2) > 0 && bvec(2) < 5) { // restriction on min/max distance
                 data.conservativeResize(data.rows() + 1, NoChange);
                 data.row(j) = bvec;
             }
         }
         // mult and error
         for (int i = 0; i < data.rows(); i++) {
-            float error = (-0.01 + (rand() / (RAND_MAX / 0.02)));
+            double error = (-0.01 + (rand() / (RAND_MAX / 0.02)));
             // cout << "error: " << error << endl;
             data.col(2)(i) += error;
         }
