@@ -18,32 +18,32 @@ find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(Python3 COMPONENTS NumPy)
 find_package(OpenMP REQUIRED)
 
-if(Python3_NumPy_FOUND AND OpenMP_CXX_FOUND)
-  target_link_libraries(mappernode INTERFACE
-    Python3::NumPy OpenMP::OpenMP_CXX autodiff::autodiff
-  )
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ")
-else()
-  target_compile_definitions(mappernode INTERFACE WITHOUT_NUMPY)
-endif()
+if (Python3_NumPy_FOUND AND OpenMP_CXX_FOUND)
+    target_link_libraries(mappernode INTERFACE
+            Python3::NumPy OpenMP::OpenMP_CXX autodiff::autodiff
+            )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ")
+else ()
+    target_compile_definitions(mappernode INTERFACE WITHOUT_NUMPY)
+endif ()
 install(
-  TARGETS mappernode
-  EXPORT install_targets
+        TARGETS mappernode
+        EXPORT install_targets
 )
 
 target_include_directories(mappernode
-  PRIVATE
-    ${CERES_INCLUDE_DIRS}
-    ${PYTHON_INCLUDE_DIRS}
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
-    $<INSTALL_INTERFACE:include>
-)
+        PRIVATE
+        ${CERES_INCLUDE_DIRS}
+        ${PYTHON_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
+        $<INSTALL_INTERFACE:include>
+        )
 
 target_link_libraries(mappernode
-  PRIVATE
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${CERES_LIBRARIES}
-    Python3::Python
-    Python3::Module
-)
+        PRIVATE
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${CERES_LIBRARIES}
+        Python3::Python
+        Python3::Module
+        )

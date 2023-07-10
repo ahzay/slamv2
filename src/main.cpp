@@ -1,5 +1,6 @@
 #include "handler.hpp"
 #include <iostream>
+
 using namespace std;
 
 /*void simulate() {
@@ -105,138 +106,138 @@ using namespace std;
   }*/
 
 void run(int argc, char *argv[]) {
-  int nscans = 1;
-  if (argc < 8) // nscans,z,N,stride, dist, an tol, env mult, data folder
-    exit(1);
-  nscans = atoi(argv[1]);
-  N = atoi(argv[3]);
-  float mult = atof(argv[7]);
-  angle_tolerance = atof(argv[6]);
-  dist_tolerance = atof(argv[5]);
-  vector<Scan> scans(nscans);
-  for (int i = 0; i < nscans; i++)
-    scans[i].read_scan(string(argv[8]), i, atoi(argv[2]), mult);
+    int nscans = 1;
+    if (argc < 8) // nscans,z,N,stride, dist, an tol, env mult, data folder
+        exit(1);
+    nscans = atoi(argv[1]);
+    N = atoi(argv[3]);
+    float mult = atof(argv[7]);
+    angle_tolerance = atof(argv[6]);
+    dist_tolerance = atof(argv[5]);
+    vector<Scan> scans(nscans);
+    for (int i = 0; i < nscans; i++)
+        scans[i].read_scan(string(argv[8]), i, atoi(argv[2]), mult);
 
-  Model *ellipse_model1 = new Model(
-      fsn_0, dfsn_0, dop_0, ls_0, ap_ls_0, safety_0, dst_0, init_post_0,
-      associate_0, augment_post_0, string(argv[8]) + "/model_e_real.txt");
-  /*Model* ellipse_model2 = new Model(fsn_0,
-                                    dfsn_0,
-                                    dop_0,
-                                    ls_2,
-                                    ap_ls_2,
-                                    safety_2,
-                                    dst_0,
-                                    init_post_0,
-                                    associate_0,
-                                    augment_post_0,
-                                    string(argv[8]) + "/model_e_real.txt");
-  Model* ellipse_model3 = new Model(fsn_0,
-                                    dfsn_0,
-                                    dop_0,
-                                    ls_3,
-                                    ap_ls_3,
-                                    safety_3,
-                                    dst_0,
-                                    init_post_0,
-                                    associate_0,
-                                    augment_post_0,
-                                    string(argv[8]) + "/model_e_real.txt");
-  Model* line_model = new Model(fsn_1,
-                                dfsn_1,
-                                dop_1,
-                                ls_1,
-                                safety_1,
-                                fsn_1, // same dist func
-                                init_post_1,
-                                associate_1,
-                                augment_post_1,
-                                string(argv[8]) + "/model1_real.txt");*/
+    Model *ellipse_model1 = new Model(
+            fsn_0, dfsn_0, dop_0, ls_0, ap_ls_0, safety_0, dst_0, init_post_0,
+            associate_0, augment_post_0, string(argv[8]) + "/model_e_real.txt");
+    /*Model* ellipse_model2 = new Model(fsn_0,
+                                      dfsn_0,
+                                      dop_0,
+                                      ls_2,
+                                      ap_ls_2,
+                                      safety_2,
+                                      dst_0,
+                                      init_post_0,
+                                      associate_0,
+                                      augment_post_0,
+                                      string(argv[8]) + "/model_e_real.txt");
+    Model* ellipse_model3 = new Model(fsn_0,
+                                      dfsn_0,
+                                      dop_0,
+                                      ls_3,
+                                      ap_ls_3,
+                                      safety_3,
+                                      dst_0,
+                                      init_post_0,
+                                      associate_0,
+                                      augment_post_0,
+                                      string(argv[8]) + "/model_e_real.txt");
+    Model* line_model = new Model(fsn_1,
+                                  dfsn_1,
+                                  dop_1,
+                                  ls_1,
+                                  safety_1,
+                                  fsn_1, // same dist func
+                                  init_post_1,
+                                  associate_1,
+                                  augment_post_1,
+                                  string(argv[8]) + "/model1_real.txt");*/
 
-  cout << "   segmenting first scan" << endl;
-  // e1 0.3 0.7
-  // e2 0.8 1.2
-  // e3 1.3 1.7
-  vector<Model *> models;
-  models.push_back(ellipse_model1);
-  // models.push_back(ellipse_model2);
-  // models.push_back(ellipse_model3);
-  //  models.push_back(line_model);
-  Handler h(models);
-  // v.add_points(scans.back().data(all, {0, 1}), "r."); // viz
-  int n = 0;
-  int cnt = 0;
-  for (auto &scan : scans) {
-    Visualizer v(cnt++);
-    // scan.write_scan(n++);
-    cout << "*********************************************************" << endl;
-    cout << "************************NEW SCAN*************************"
-         << cnt - 1 << endl;
-    cout << "*********************************************************" << endl;
-    // v.add_points(scan.data(all, {0, 1}), "r."); // viz
-    Matrix<double, 1, 2> m;
-    m << scan.loc(0), scan.loc(1);
+    cout << "   segmenting first scan" << endl;
+    // e1 0.3 0.7
+    // e2 0.8 1.2
+    // e3 1.3 1.7
+    vector<Model *> models;
+    models.push_back(ellipse_model1);
+    // models.push_back(ellipse_model2);
+    // models.push_back(ellipse_model3);
+    //  models.push_back(line_model);
+    Handler h(models);
+    // v.add_points(scans.back().data(all, {0, 1}), "r."); // viz
+    int n = 0;
+    int cnt = 0;
+    for (auto &scan: scans) {
+        Visualizer v(cnt++);
+        // scan.write_scan(n++);
+        cout << "*********************************************************" << endl;
+        cout << "************************NEW SCAN*************************"
+             << cnt - 1 << endl;
+        cout << "*********************************************************" << endl;
+        // v.add_points(scan.data(all, {0, 1}), "r."); // viz
+        Matrix<double, 1, 2> m;
+        m << scan.loc(0), scan.loc(1);
 
-    // for (int l = 0; l < scan.data.rows(); l++)
-    //   v.add_points(Matrix<double, 1, 2>(scan.data(l, { 0, 1 })), "red"); //
-    //   viz
-    vector<Data> preprocessed_scan = h.preprocess_scan(scan, v);
-    int k = 0;
-    ofstream odbgplt("debug.gpt");
-    odbgplt << "set style data lines" << endl
-            << "set term pngcairo size 2000,1000 enhanced font \"Times,12\" "
-            << endl
-            << "datafile = \"debugdata.dat\"" << endl
-            << "set logscale y" << endl
-            << "plot datafile using 1:2 with lines title \'x\', \\" << endl
-            << "datafile using 1:3 with lines title \'y\', \\" << endl
-            << "datafile using 1:4 with lines title \'t\', \\" << endl
-            << "datafile using 1:5 with lines title \'a\', \\" << endl
-            << "datafile using 1:6 with lines title \'b\', \\" << endl
-            << "datafile using 1:7 with lines title \'e\'" << endl
-            << "set key outside" << endl;
-    ;
+        // for (int l = 0; l < scan.data.rows(); l++)
+        //   v.add_points(Matrix<double, 1, 2>(scan.data(l, { 0, 1 })), "red"); //
+        //   viz
+        vector<Data> preprocessed_scan = h.preprocess_scan(scan, v);
+        int k = 0;
+        ofstream odbgplt("debug.gpt");
+        odbgplt << "set style data lines" << endl
+                << "set term pngcairo size 2000,1000 enhanced font \"Times,12\" "
+                << endl
+                << "datafile = \"debugdata.dat\"" << endl
+                << "set logscale y" << endl
+                << "plot datafile using 1:2 with lines title \'x\', \\" << endl
+                << "datafile using 1:3 with lines title \'y\', \\" << endl
+                << "datafile using 1:4 with lines title \'t\', \\" << endl
+                << "datafile using 1:5 with lines title \'a\', \\" << endl
+                << "datafile using 1:6 with lines title \'b\', \\" << endl
+                << "datafile using 1:7 with lines title \'e\'" << endl
+                << "set key outside" << endl;;
 
-    for (int i = 0; i < preprocessed_scan.size(); i += atoi(argv[4])) {
-      printf("data %i:\n", k++);
-      VectorXd measurement = preprocessed_scan[i].d;
-      cout << "*********************************************************"
-           << endl;
-      cout << "PROCESSING: " << i << " - " << measurement.transpose() << endl;
-      cout << "*********************************************************"
-           << endl;
-      // v.add_points(Matrix<double, 1, 2>(preprocessed_scan[i].d({0, 1})),
-      //              "r."); // viz
-      h.process_measurement(preprocessed_scan[i], v);
-      // debugging
-      // plot uncertainty after each data point
+        for (int i = 0; i < preprocessed_scan.size(); i += atoi(argv[4])) {
+            printf("data %i:\n", k++);
+            VectorXd measurement = preprocessed_scan[i].d;
+            cout << "*********************************************************"
+                 << endl;
+            cout << "PROCESSING: " << i << " - " << measurement.transpose() << endl;
+            cout << "*********************************************************"
+                 << endl;
+            // v.add_points(Matrix<double, 1, 2>(preprocessed_scan[i].d({0, 1})),
+            //              "r."); // viz
+            h.process_measurement(preprocessed_scan[i], v);
+            // debugging
+            // plot uncertainty after each data point
+        }
+        // scan over
+        h.end_scan();
+        for (auto &e: h.map.entities) {
+            if (e.p.size() == 6)
+                v.add_ellipse(e.p);
+            if (e.p.size() == 2)
+                v.add_segment(e.p, e.t);
+        }
+        v.add_points(m, "blue");
+        v.save();
+        cout << "*********************************************************" << endl;
+        for (auto &e: h.map.entities)
+            cout << e.p.transpose() << endl;
+        cout << "**************************DONE***************************" << endl;
     }
-    // scan over
-    h.end_scan();
-    for (auto &e : h.map.entities) {
+    /*for (auto &e : h.map.entities) {
       if (e.p.size() == 6)
-        v.add_ellipse(e.p);
+        v.add_ellipse(e.p, "g-");
       if (e.p.size() == 2)
-        v.add_segment(e.p, e.t);
-    }
-    v.add_points(m, "blue");
-    v.save();
-    cout << "*********************************************************" << endl;
-    for (auto &e : h.map.entities)
-      cout << e.p.transpose() << endl;
-    cout << "**************************DONE***************************" << endl;
-  }
-  /*for (auto &e : h.map.entities) {
-    if (e.p.size() == 6)
-      v.add_ellipse(e.p, "g-");
-    if (e.p.size() == 2)
-      v.add_segment(e.p, e.t, "g-");
-  }*/
-  // v.show();
+        v.add_segment(e.p, e.t, "g-");
+    }*/
+    // v.show();
 }
+
 int main(int argc, char *argv[]) {
-  run(argc, argv);
-  // render plots
-  system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");
-  return 0;
+    run(argc, argv);
+    // render plots
+    system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");
+    return 0;
 }
