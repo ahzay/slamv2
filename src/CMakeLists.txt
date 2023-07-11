@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS} /usr/lib/python3.10/site-packages/numpy/core/include)
 
-add_executable(mappernode main.cpp vecext.hpp visualizer.hpp simulate.hpp model.hpp handler.hpp functions.hpp ekf.hpp fsm.hpp preproc.hpp)
+add_executable(mappernode main.cpp vecext.hpp visualizer.hpp simulate.hpp model.hpp handler.hpp functions.hpp ekf.hpp fsm.hpp preproc.hpp model.cpp model.h data.cpp data.h aggregate.cpp aggregate.h ellipsemodel.cpp ellipsemodel.h entity.cpp entity.h tools.cpp tools.h)
 
 # external libs
 # find_package(FastAD CONFIG REQUIRED)

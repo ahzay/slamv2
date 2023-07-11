@@ -262,7 +262,7 @@ public:
         }
         // system propagation
         _e->E = _e->E + _e->m->_Q_a;
-        return 0;x
+        return 0;
     }
 
     // private:

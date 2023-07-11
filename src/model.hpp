@@ -81,6 +81,10 @@ public:
             _W_a = _W_a.array().pow(2);
             f >> _mahalanobis_strict >> _mahalanobis_flex >> _mahalanobis_aug >>
               _dop_sigma;
+            for (int i = 0; i < _parameter_count; i++)
+                f >> _parameter_mins(i);
+            for (int i = 0; i < _parameter_count; i++)
+                f >> _parameter_maxs(i);
             f.close();
             // print
             cout << "model" << endl
@@ -97,7 +101,10 @@ public:
                  << _mahalanobis_strict << endl
                  << _mahalanobis_flex << endl
                  << _mahalanobis_aug << endl
-                 << _dop_sigma << endl;
+                 << _dop_sigma << endl
+                 << _parameter_mins.transpose() << endl
+                 << _parameter_maxs.transpose() << endl;
+
         } else
             throw std::runtime_error("Error opening the model file!");
     }
@@ -132,6 +139,7 @@ public:
     void (*_augment_post)(const VectorXd p, VectorXd &t, const Data d);
 
     //
+    VectorXd _parameter_mins, _parameter_maxs;
     VectorXi _dfs_parameter_indexes, _dfs_measurement_error_indexes;
     MatrixXd _W_a, _W_s, _Q_a, _Q_s, I;
     double _mahalanobis_strict, _mahalanobis_flex, _dop_sigma,
