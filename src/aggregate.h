@@ -13,20 +13,25 @@ using namespace std;
 
 class Aggregate {
 public:
-    Aggregate(int distance_tolerance, int angle_tolerance);
+    Aggregate();
 
-    MatrixXd get_mat() const;
+    Aggregate(const MatrixX2d &mat, const Vector3d &pose);
+
+    MatrixX2d get_measurement_mat() const;
+
+    MatrixX2d get_rotated_measurement_mat() const;
+
+    MatrixX2d get_xy_mat() const;
 
     void push_back(Data data);
 
-    bool check_continuity(Data data);
 
     void flush(Data data);
 
-    // private:
-    int _angle_tolerance, _distance_tolerance;
-    VectorXd _pos;
-    vector<Data> data_v;
+    void flush();
+
+    vector<Data> _data_vector; // non rotated data
+    Vector3d _pose;
 };
 
 

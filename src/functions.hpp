@@ -116,7 +116,7 @@ public:
 
     // attributes
     VectorXd d;          // data (measurement)
-    VectorXd p;          // pose at measurement
+    VectorXd p;          // position at measurement
     Entity *e = nullptr; // associated entity
 };
 
@@ -126,18 +126,18 @@ public:
     // functions
     MatrixXd get_mat() const { // returns a matrix of measurements (for ls/dop)
         MatrixXd m;
-        m.conservativeResize(data_v.size(), 4); // x,y,d,an
-        for (int i = 0; i < data_v.size(); i++)
-            m.row(i) = data_v[i].d;
+        m.conservativeResize(data_vector.size(), 4); // x,y,d,an
+        for (int i = 0; i < data_vector.size(); i++)
+            m.row(i) = data_vector[i].d;
         return m; // optimize this fun?
     }
 
-    void push_back(Data data) { data_v.push_back(data); }
+    void push_back(Data data) { data_vector.push_back(data); }
 
     bool check_continuity(Data data) {
-        double dist_variation = abs(data.d(2) - data_v.back().d(2));
-        double angle_variation = abs(atan2(sin(data.d(3) - data_v.back().d(3)),
-                                           cos(data.d(3) - data_v.back().d(3))));
+        double dist_variation = abs(data.d(2) - data_vector.back().d(2));
+        double angle_variation = abs(atan2(sin(data.d(3) - data_vector.back().d(3)),
+                                           cos(data.d(3) - data_vector.back().d(3))));
         // double angle_variation = abs(v(3) - data(last, 3));
         //  ret 1 for error
         //  PRINT FOR DEBUG
@@ -152,9 +152,9 @@ public:
     }
 
     void flush(Data data) {                 // flush and fill with one data
-        data_v.clear(); // resetting
-        data_v.push_back(data);
-        pose = data.p;
+        data_vector.clear(); // resetting
+        data_vector.push_back(data);
+        position = data.p;
         // e = nullptr;
         m = nullptr;
     }
@@ -162,9 +162,9 @@ public:
     // attributes
     Model *m = nullptr;
     // Entity *e = nullptr;
-    //  MatrixXd data; // does not include pose
-    VectorXd pose; // not necessary
-    vector<Data> data_v;
+    //  MatrixXd data; // does not include position
+    VectorXd position; // not necessary
+    vector<Data> data_vector;
 };
 
 //
@@ -268,7 +268,7 @@ dfsn_0(const VectorXd p, const VectorXd pos, const MatrixXd data) {
         ans(i, 11) = dmuan;
         // cout << "data row: " << data.row(i) << endl;
         // cout << "params: " << p.transpose() << endl;
-        // cout << "pose: " << pos.transpose() << endl;
+        // cout << "position: " << pos.transpose() << endl;
         // cout << "df row: " << ans(i, all) << endl;
     }
     return ans;
@@ -602,29 +602,29 @@ bool
 safety_0(VectorXd &p) {
     if (p(5) < 0.3) {
         p(5) = 0.3;
-        return 1;
+        return true;
     }
     if (p(5) > 1.7) {
         p(5) = 1.7;
-        return 1;
+        return true;
     }
     if (p(3) < 0.25) {
         p(3) = 0.25;
-        return 1;
+        return true;
     }
     if (p(4) < 0.25) {
         p(4) = 0.25;
-        return 1;
+        return true;
     }
     if (p(2) > 2 * M_PI) {
         p(2) -= 2 * M_PI;
-        return 0;
+        return false;
     }
     if (p(2) < 0) {
         p(2) += 2 * M_PI;
-        return 0;
+        return false;
     }
-    return 0;
+    return false;
 }
 
 VectorXd

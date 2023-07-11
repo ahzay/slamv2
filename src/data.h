@@ -4,17 +4,23 @@
 
 #ifndef MAPPERNODE_DATA_H
 #define MAPPERNODE_DATA_H
+
 #include "Eigen/Core"
+
 using namespace Eigen;
+
 class Entity;
+
 class Data {
 public:
-    Data() = default;
-    Data(VectorXd data, VectorXd pose);
+    Data(Vector2d measurement, Vector3d pose);
+
+    Vector2d get_rotated_measurement() const;
+
     // attributes
-    VectorXd d;          // data (measurement)
-    VectorXd p;          // pose at measurement
-    Entity *e = nullptr; // associated entity
+    Vector2d _measurement;          // data (measurement)
+    Vector3d _pose;          // position at measurement
+    Entity *_e = nullptr; // associated entity
 };
 
 

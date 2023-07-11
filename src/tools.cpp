@@ -3,9 +3,9 @@
 //
 
 #include "tools.h"
+
 template<class MatrixT>
-bool
-isPsd(const MatrixT &A) {
+bool isPsd(const MatrixT &A) {
     // if (!A.isApprox(A.transpose(), 1e-8f)) {
     //   cout << "is not symmetric!" << endl;
     //   cout << "A-A':" << endl << A - A.transpose() << endl;
@@ -17,4 +17,11 @@ isPsd(const MatrixT &A) {
         return false;
     }
     return true;
+}
+
+double cov(VectorXd x, VectorXd y) {
+    auto xm = x.array() - x.mean();
+    auto ym = y.array() - y.mean();
+    auto m = xm.array() * ym.array();
+    return m.sum() / (m.size() - 1);
 }

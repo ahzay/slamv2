@@ -183,9 +183,9 @@ public:
             if (min_fsm->state > 3) { // TODO: make sure we are not adding sink fsms
                 // min_fsm->f_least_squares();
                 min_fsm->_ekf->_p =
-                        min_fsm->_model->_ls(min_fsm->_a.pose, min_fsm->_a.get_mat());
+                        min_fsm->_model->_ls(min_fsm->_a.position, min_fsm->_a.get_mat());
                 min_fsm->_ekf->_E = min_fsm->_model->_dop(min_fsm->_ekf->_p,
-                                                          min_fsm->_a.pose,
+                                                          min_fsm->_a.position,
                                                           min_fsm->_a.get_mat(),
                                                           min_fsm->_model->_dop_sigma);
                 map.entities.push_back(
@@ -218,9 +218,9 @@ public:
         cout << "running fsms: " << running_fsms.size() << endl;
         for (auto &fsm: running_fsms) {
             // fsm.f_least_squares();
-            fsm._ekf->_p = fsm._model->_ls(fsm._a.pose, fsm._a.get_mat());
+            fsm._ekf->_p = fsm._model->_ls(fsm._a.position, fsm._a.get_mat());
             fsm._ekf->_E = fsm._model->_dop(
-                    fsm._ekf->_p, fsm._a.pose, fsm._a.get_mat(), fsm._model->_dop_sigma);
+                    fsm._ekf->_p, fsm._a.position, fsm._a.get_mat(), fsm._model->_dop_sigma);
             cout << "E: " << endl << fsm._ekf->_E.diagonal().transpose() << endl;
         }
 
@@ -288,7 +288,7 @@ public:
 
     // attributes
     const vector<Model *> _models; // permanent
-    // VectorXd _data, _pose;         // buffers, pose should stay during scan
+    // VectorXd _data, _pose;         // buffers, position should stay during scan
     Data _data;
     unsigned short n = 0;
     State state = s_begin;

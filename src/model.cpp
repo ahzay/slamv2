@@ -64,9 +64,8 @@ Model::Model(const string &file) {
          << _parameter_maxs.transpose() << endl;
 }
 
-MatrixXd Model::dop(const Entity &e, const Aggregate &a) {
-    const auto data = a.get_mat();
-    Matrix<double, Dynamic, 12> df = dfs(e, a);
+MatrixXd Model::dop(const Entity &e, const Aggregate &a) const {
+    Matrix<double, Dynamic, 12> df = dfsn(e, a);
     MatrixXd Jmes = df(all, {10});
     MatrixXd H = df(all, {0, 1, 2, 3, 4, 5});
     MatrixXd En = MatrixXd::Zero(6, 6);
@@ -81,4 +80,22 @@ MatrixXd Model::dop(const Entity &e, const Aggregate &a) {
         throw std::runtime_error("Non positive semi-definite matrix!");
     }
     return En;
+}
+
+VectorXd Model::fsn(const Entity &e, const Aggregate &a) const {
+    VectorXd ans;
+    ans.resize(a._data_vector.size());
+    for (int i = 0; i < a._data_vector.size(); i++) {
+        ans(i) = fs(e, a._data_vector[i]);
+    }
+    return ans;
+}
+
+MatrixXd Model::dfsn(const Entity &e, const Aggregate &a) const {
+    MatrixXd ans;
+    ans.resize(a._data_vector.size(), _parameter_count + 6);
+    for (int i = 0; i < a._data_vector.size(); i++) {
+        ans.row(i) = dfs(e, a._data_vector[i]);
+    }
+    return ans;
 }

@@ -4,14 +4,17 @@
 
 #ifndef MAPPERNODE_TOOLS_H
 #define MAPPERNODE_TOOLS_H
+
 #include <Eigen/Core>
 #include <iostream>
+
 using namespace Eigen;
 using namespace std;
-template<class MatrixT>
-bool
-isPsd(const MatrixT &A);
 
+template<class MatrixT>
+bool isPsd(const MatrixT &A);
+
+double cov(VectorXd x, VectorXd y);
 
 
 #endif //MAPPERNODE_TOOLS_H

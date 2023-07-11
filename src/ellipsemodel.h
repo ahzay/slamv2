@@ -11,32 +11,40 @@
 #include <ceres/cost_function.h>
 #include <ceres/problem.h>
 #include <ceres/solver.h>
-namespace ad=autodiff;
+
+namespace ad = autodiff;
+
 class EllipseModel : public Model {
 public:
-    EllipseModel(const string &file);
+    explicit EllipseModel(const string &file);
 
-    VectorXd fs(const Entity &e, const Aggregate &a) override;
+    double fs(const Entity &e, const Data &d) const override;
 
-    MatrixXd dfs(const Entity &e, const Aggregate &a) override;
+    VectorXd dfs(const Entity &e, const Data &d) const override;
 
-    VectorXd ls(const Aggregate &a) override;
+    VectorXd init(const Aggregate &a) const;
 
-    VectorXd ls(Entity &e, const Aggregate &a) override;
+    VectorXd ls(const Aggregate &a) const override;
 
-    bool safety(Entity &e) override;
+    VectorXd ls(Entity &e, const Aggregate &a) const override;
 
-    void init_post(Entity &e, const Aggregate &a) override;
+    bool safety(Entity &e) const override;
 
-    bool associate(const Entity &e, const Data &d) override;
+    void init_post(Entity &e, const Aggregate &a) const override;
 
-    void augment_post(Entity &e, const Data &d) override;
+    bool associate(const Entity &e, const Data &d) const override;
 
-private:
+    void augment_post(Entity &e, const Data &d) const override;
+
+private: // gross wrappers
     template<typename T>
-    T ft(T xc, T yc, T th, T a, T b, T e, T xp, T yp, T d, T an, T mud, T muan) ;
+    T ft(T xc, T yc, T th, T a, T b, T e, T xp, T yp, T d, T an, T mud, T muan) const;
+
     template<typename T>
-    T fss(const VectorXd& p, const VectorXd &pos, const VectorXd &data);
+    T fss(const VectorXd &p, const VectorXd &pose, const VectorXd &rotated_measurement) const;
+
+    struct LossFunction;
+    struct CostFunction;
 };
 
 

@@ -8,8 +8,8 @@ public:
     // functions
     Fsm(Model *m, Aggregate a) : _model(m), _a(a) {
         _a.m = (Model *) m;
-        VectorXd p = m->_ls(a.pose, a.get_mat());
-        MatrixXd E = m->_dop(p, a.pose, a.get_mat(), m->_dop_sigma);
+        VectorXd p = m->_ls(a.position, a.get_mat());
+        MatrixXd E = m->_dop(p, a.position, a.get_mat(), m->_dop_sigma);
         _ekf = new Ekf(m, p, E);
     }
 
@@ -38,9 +38,9 @@ public:
 
     void f_least_squares() {
         // here we LS, DOP and reset EKF
-        _ekf->_p = _model->_ls(_a.pose, _a.get_mat());
+        _ekf->_p = _model->_ls(_a.position, _a.get_mat());
         _ekf->_E =
-                _model->_dop(_ekf->_p, _a.pose, _a.get_mat(), _model->_dop_sigma);
+                _model->_dop(_ekf->_p, _a.position, _a.get_mat(), _model->_dop_sigma);
         // automatically updated in ekf! ... retesting
         if (_ekf->update(_data.d, _data.p, _model->_mahalanobis_strict)) {
             cout << "FSM CLOSING!!!!" << endl;

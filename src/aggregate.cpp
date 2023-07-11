@@ -4,39 +4,50 @@
 
 #include "aggregate.h"
 
-MatrixXd Aggregate::get_mat() const {
-    MatrixXd m;
-    m.conservativeResize(data_v.size(), 4);
-    for (int i = 0; i < data_v.size(); i++)
-        m.row(i) = data_v[i].d;
-    return m;
+MatrixX2d Aggregate::get_measurement_mat() const {
+    MatrixX2d mat;
+    mat.conservativeResize(_data_vector.size(), 2);
+    for (int i = 0; i < _data_vector.size(); i++)
+        mat.row(i) = _data_vector[i]._measurement;
+    return mat;
+}
+
+MatrixX2d Aggregate::get_rotated_measurement_mat() const {
+    MatrixX2d mat;
+    mat.conservativeResize(_data_vector.size(), 2);
+    for (int i = 0; i < _data_vector.size(); i++)
+        mat.row(i) = _data_vector[i].get_rotated_measurement();
+    return mat;
 }
 
 void Aggregate::push_back(Data data) {
-    data_v.push_back(data);
+    _data_vector.push_back(data);
 }
 
-bool Aggregate::check_continuity(Data data) {
-    double dist_variation = abs(data.d(2) - data_v.back().d(2));
-    double angle_variation = abs(atan2(sin(data.d(3) - data_v.back().d(3)),
-                                       cos(data.d(3) - data_v.back().d(3))));
-    bool ans = angle_variation > _angle_tolerance || dist_variation > _distance_tolerance;
-    if (ans) {
-        cout << "Dist variation: " << dist_variation << endl
-             << "Angle variation: " << angle_variation << endl
-             << "Dist tolerance " << _distance_tolerance << endl
-             << "Angle tolerance " << _angle_tolerance << endl;
-    }
-    return ans;
-}
 
 void Aggregate::flush(Data data) {
-    data_v.clear();
-    data_v.push_back(data);
-    _pos = data.p;
+    _data_vector.clear();
+    _data_vector.push_back(data);
 }
 
-Aggregate::Aggregate(int angle_tolerance, int distance_tolerance) {
-    _angle_tolerance = angle_tolerance;
-    _distance_tolerance = distance_tolerance;
+
+void Aggregate::flush() {
+    _data_vector.clear();
+}
+
+Aggregate::Aggregate(const MatrixX2d &mat, const Vector3d &pose) {
+    _pose = pose;
+    for (int i = 0; i < mat.rows(); i++) {
+        _data_vector.emplace_back(mat(i, all), _pose);
+    }
+}
+
+MatrixX2d Aggregate::get_xy_mat() const {
+    const auto dan = get_rotated_measurement_mat();
+    VectorXd d = dan.col(0);
+    VectorXd ori = dan.col(1);
+    ArrayX2d ans;
+    ans.col(0) = d.array() * ori.array().cos() + _pose(0);
+    ans.col(1) = d.array() * ori.array().sin() + _pose(1);
+    return ans;
 }

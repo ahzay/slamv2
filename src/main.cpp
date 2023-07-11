@@ -111,9 +111,9 @@ void run(int argc, char *argv[]) {
         exit(1);
     nscans = stoi(argv[1]);
     N = stoi(argv[3]);
-    float mult = strtof(argv[7],nullptr);
-    angle_tolerance = strtof(argv[6],nullptr);
-    dist_tolerance = strtof(argv[5],nullptr);
+    float mult = strtof(argv[7], nullptr);
+    angle_tolerance = strtof(argv[6], nullptr);
+    dist_tolerance = strtof(argv[5], nullptr);
     vector<Scan> scans(nscans);
     for (int i = 0; i < nscans; i++)
         scans[i].read_scan(string(argv[8]), i, stoi(argv[2]), mult);
