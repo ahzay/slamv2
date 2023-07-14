@@ -23,10 +23,10 @@ public:
 
     MatrixX2d get_xy_mat() const;
 
-    void push_back(Data data);
+    void push_back(const Data &data);
 
 
-    void flush(Data data);
+    void flush(const Data &data);
 
     void flush();
 

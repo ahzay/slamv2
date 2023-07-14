@@ -20,19 +20,21 @@ MatrixX2d Aggregate::get_rotated_measurement_mat() const {
     return mat;
 }
 
-void Aggregate::push_back(Data data) {
+void Aggregate::push_back(const Data &data) {
     _data_vector.push_back(data);
+    _pose = data._pose;
 }
 
 
-void Aggregate::flush(Data data) {
+void Aggregate::flush(const Data &data) {
     _data_vector.clear();
-    _data_vector.push_back(data);
+    push_back(data);
 }
 
 
 void Aggregate::flush() {
     _data_vector.clear();
+    _pose.setConstant(NAN);
 }
 
 Aggregate::Aggregate(const MatrixX2d &mat, const Vector3d &pose) {
@@ -43,11 +45,11 @@ Aggregate::Aggregate(const MatrixX2d &mat, const Vector3d &pose) {
 }
 
 MatrixX2d Aggregate::get_xy_mat() const {
-    const auto dan = get_rotated_measurement_mat();
-    VectorXd d = dan.col(0);
-    VectorXd ori = dan.col(1);
-    ArrayX2d ans;
-    ans.col(0) = d.array() * ori.array().cos() + _pose(0);
-    ans.col(1) = d.array() * ori.array().sin() + _pose(1);
-    return ans;
+    MatrixX2d mat;
+    mat.conservativeResize(_data_vector.size(), 2);
+    for (int i = 0; i < _data_vector.size(); i++)
+        mat.row(i) = _data_vector[i].get_xy();
+    return mat;
 }
+
+Aggregate::Aggregate() = default;

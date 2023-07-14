@@ -257,7 +257,7 @@ public:
         cout << "E Eigenvalues after: " << _e->E.eigenvalues().transpose() << endl;
         cout << "E: " << endl << _e->E.diagonal().transpose() << endl;
         // cout << "E-VAL: " << _e->E.diagonal().array().abs().sum() << endl;
-        if (!isPsd(_e->E)) {
+        if (!is_psd(_e->E)) {
             throw std::runtime_error("Non positive semi-definite matrix!");
         }
         // system propagation

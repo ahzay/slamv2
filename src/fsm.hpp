@@ -3,6 +3,7 @@
 
 #include "ekf.hpp"
 
+
 class Fsm {
 public:
     // functions
@@ -69,7 +70,7 @@ public:
                 f_strict();
                 break;
             case s_fsm_least_squares:
-                cout << "fsm ls" << endl;
+                cout << "fsm ap_ls" << endl;
                 f_least_squares();
                 break;
             case s_fsm_close:

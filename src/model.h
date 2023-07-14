@@ -6,26 +6,32 @@
 #define MAPPERNODE_MODEL_H
 
 #include "aggregate.h"
+#include "tools.h"
 
 class Model {
 public:
     explicit Model(const string &file);
 
-    virtual double fs(const Entity &e, const Data &d) const = 0;
+
+    double fs(const Entity &e, const Data &d) const;
+
+    virtual double fss(const VectorXd &p, const VectorXd &pose, const VectorXd &rotated_measurement) const = 0;
 
     VectorXd fsn(const Entity &e, const Aggregate &a) const;
 
-    virtual VectorXd dfs(const Entity &e, const Data &d) const = 0;
+    virtual Matrix<double, 1, -1> dfs(const Entity &e, const Data &d) const = 0;
 
     MatrixXd dfsn(const Entity &e, const Aggregate &a) const;
 
-    MatrixXd dop(const Entity &e, const Aggregate &a) const;
+    void dop(Entity &e, const Aggregate &a) const;
+
+    void ap_dop(Entity &e, const Aggregate &a) const; // TODO: this
 
     virtual VectorXd init(const Aggregate &a) const = 0;
 
-    virtual VectorXd ls(const Aggregate &a) const = 0;
+    virtual void ls(Entity &e, const Aggregate &a) const = 0;
 
-    virtual VectorXd ls(Entity &e, const Aggregate &a) const = 0;
+    virtual void ap_ls(Entity &e, const Aggregate &a) const = 0;
 
     virtual bool safety(Entity &e) const = 0;
 

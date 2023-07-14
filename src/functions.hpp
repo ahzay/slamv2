@@ -4,7 +4,7 @@
 #include "preproc.hpp"
 #include <Eigen/Eigenvalues>
 #include <Eigen/LU>
-#include <autodiff/reverse/var.hpp>
+#include <autodiff/reverse/var.hpp>f
 #include <ceres/autodiff_cost_function.h>
 #include <ceres/cost_function.h>
 #include <ceres/problem.h>
@@ -79,7 +79,7 @@ rowRank(const Eigen::MatrixXd &A) {
 //******* model independant parameters *******//
 template<class MatrixT>
 bool
-isPsd(const MatrixT &A) {
+is_psd(const MatrixT &A) {
     // if (!A.isApprox(A.transpose(), 1e-8f)) {
     //   cout << "is not symmetric!" << endl;
     //   cout << "A-A':" << endl << A - A.transpose() << endl;
@@ -124,7 +124,7 @@ public:
 class Aggregate {
 public:
     // functions
-    MatrixXd get_mat() const { // returns a matrix of measurements (for ls/dop)
+    MatrixXd get_mat() const { // returns a matrix of measurements (for ap_ls/dop)
         MatrixXd m;
         m.conservativeResize(data_vector.size(), 4); // x,y,d,an
         for (int i = 0; i < data_vector.size(); i++)
@@ -178,7 +178,7 @@ sgn(T val) {
 }
 
 double
-cov(VectorXd x, VectorXd y) {
+vector_cov(VectorXd x, VectorXd y) {
     auto xm = x.array() - x.mean();
     auto ym = y.array() - y.mean();
     auto m = xm.array() * ym.array();
@@ -300,7 +300,7 @@ dop_0(const VectorXd p,
                  H(i, all));
     En = En.inverse();
     cout << "En: " << endl << En << endl;
-    if (!isPsd(En)) {
+    if (!is_psd(En)) {
         throw std::runtime_error("Non positive semi-definite matrix!");
     }
     return En;
@@ -309,8 +309,8 @@ dop_0(const VectorXd p,
 VectorXd
 init_0(VectorXd x, VectorXd y, VectorXd loc) {
     double *p = new double[11];
-    MatrixXd m({{cov(x, x), cov(x, y)},
-                {cov(y, x), cov(y, y)}});
+    MatrixXd m({{vector_cov(x, x), vector_cov(x, y)},
+                {vector_cov(y, x), vector_cov(y, y)}});
     JacobiSVD<MatrixXd> svd(m, ComputeFullU | ComputeFullV);
     auto V = svd.matrixV();
     auto D = svd.singularValues();

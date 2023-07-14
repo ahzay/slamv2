@@ -1,32 +1,17 @@
-#ifndef VISUALIZER_HPP
-#define VISUALIZER_HPP
+//
+// Created by user on 7/13/23.
+//
 
-#include "simulate.hpp"
-#include <Eigen/Core>
-#include <fstream>
-
-class Visualizer {
-public:
-    Visualizer(int cnt);
-
-    void add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts, const string &color);
-
-    void add_ellipse(Eigen::VectorXd p);
-
-    void add_segment(Eigen::VectorXd p, Eigen::VectorXd t);
-
-    void save();
-
-    ofstream of;
-};
+#include "visualizer.h"
 
 Visualizer::Visualizer(int cnt) {
     of.open(to_string(cnt) + ".gpt");
     of << "set term pngcairo size 1000,2000 enhanced font \"Times,12\" "
        << endl
-       //<< "set term pngcairo size 1000,1000 enhanced font \"Times,12\" " << endl
-       << "set size ratio -1 "
-       << endl
+       // TODO: dynamically set this with cmdline options
+       //<< "set term pngcairo size 2000,2000 enhanced font \"Times,12\" " << endl
+       //<< "set size ratio -1 "
+       //<< endl
        //<< "set contour" << endl
        << "set multiplot"
        << endl
@@ -41,10 +26,10 @@ Visualizer::Visualizer(int cnt) {
        << "set isosamples 10000,10000 " << endl
        << "set xrange [-12:12] " << endl
        << "set yrange [-21:21] "
-       //<< endl
+       << endl
        //<< "set xrange [-5:5] " << endl
        //<< "set yrange [-15:-5] "
-       << endl
+       //<< endl
        //<< "set xrange [-8:1] " << endl
        //<< "set yrange [-21:-12] " << endl
        << "set ytics 0.5" << endl
@@ -70,7 +55,7 @@ Visualizer::Visualizer(int cnt) {
 void Visualizer::add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts,
                             const string &color) {
     // of << "unset border\n unset xtics\n unset ytics\n";
-    of << R"(plot "-" w p ap_ls 7 lw 0.05 lc rgb ")" << color << "\"" << endl;
+    of << R"(plot "-" w p ls 7 lw 0.05 lc rgb ")" << color << "\"" << endl;
     for (int i = 0; i < pts.rows(); i++)
         of << pts(i, 0) << " " << pts(i, 1) << endl;
     of << "e" << endl;
@@ -84,7 +69,7 @@ void Visualizer::add_ellipse(Eigen::VectorXd p) {
        << "a=" << p(3) << endl
        << "b=" << p(4) << endl
        << "e=" << p(5) << endl
-       << "plot se_x(t), se_y(t) with l ap_ls 7 lw 3 lc rgb \"green\" "
+       << "plot se_x(t), se_y(t) with l ls 7 lw 3 lc rgb \"green\" "
           "notitle"
        << endl;
 }
@@ -105,4 +90,12 @@ void Visualizer::add_segment(Eigen::VectorXd p, Eigen::VectorXd t) {
 
 void Visualizer::save() { of.close(); }
 
-#endif // VISUALIZER_HPP
+void Visualizer::add_aggregate(const Aggregate &a, const std::string &color) {
+    of << R"(plot "-" w p ls 7 lw 0.05 lc rgb ")" << "blue" << "\"" << endl;
+    of << a._pose(0) << " " << a._pose(1) << endl;
+    of << "e" << endl;
+    of << R"(plot "-" w p ls 7 lw 0.025 lc rgb ")" << color << "\"" << endl;
+    for (const auto &d: a._data_vector)
+        of << d.get_xy()(0) << " " << d.get_xy()(1) << endl;
+    of << "e" << endl;
+}

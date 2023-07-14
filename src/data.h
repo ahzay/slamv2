@@ -15,6 +15,8 @@ class Data {
 public:
     Data(Vector2d measurement, Vector3d pose);
 
+    Vector2d get_xy() const;
+
     Vector2d get_rotated_measurement() const;
 
     // attributes

@@ -4,8 +4,22 @@
 
 #include "tools.h"
 
-template<class MatrixT>
-bool isPsd(const MatrixT &A) {
+
+int
+sgn(double val) {
+    return (double(0) < val) - (val < double(0));
+}
+
+VectorXd
+atan2(VectorXd y, VectorXd x) {
+    VectorXd res(y.size());
+    for (int i = 0; i < y.size(); i++) {
+        res(i) = atan2(y(i), x(i));
+    }
+    return res;
+}
+// TODO: eliminates entity instead of stopping entire program
+bool is_psd(const MatrixXd &A) {
     // if (!A.isApprox(A.transpose(), 1e-8f)) {
     //   cout << "is not symmetric!" << endl;
     //   cout << "A-A':" << endl << A - A.transpose() << endl;
@@ -19,7 +33,7 @@ bool isPsd(const MatrixT &A) {
     return true;
 }
 
-double cov(VectorXd x, VectorXd y) {
+double vector_cov(VectorXd x, VectorXd y) {
     auto xm = x.array() - x.mean();
     auto ym = y.array() - y.mean();
     auto m = xm.array() * ym.array();

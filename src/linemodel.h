@@ -1,9 +1,9 @@
 //
-// Created by user on 7/10/23.
+// Created by user on 7/13/23.
 //
 
-#ifndef MAPPERNODE_ELLIPSEMODEL_H
-#define MAPPERNODE_ELLIPSEMODEL_H
+#ifndef MAPPERNODE_LINEMODEL_H
+#define MAPPERNODE_LINEMODEL_H
 
 #include "model.h"
 #include <autodiff/reverse/var.hpp>
@@ -14,9 +14,9 @@
 
 namespace ad = autodiff;
 
-class EllipseModel : public Model {
+class LineModel : public Model {
 public:
-    explicit EllipseModel(const string &file);
+    explicit LineModel(const string &file);
 
     Matrix<double, 1, -1> dfs(const Entity &e, const Data &d) const override;
 
@@ -34,15 +34,13 @@ public:
 
     void augment_post(Entity &e, const Data &d) const override;
 
-    // gross wrappers
     template<typename T>
-    T ft(T xc, T yc, T th, T a, T b, T e, T xp, T yp, T d, T an, T mud, T muan) const;
+    T ft(T r, T a, T xp, T yp, T d, T an, T mud, T muan) const;
 
     double fss(const VectorXd &p, const VectorXd &pose, const VectorXd &rotated_measurement) const override;
 
-    struct LossFunction;
     struct CostFunction;
 };
 
 
-#endif //MAPPERNODE_ELLIPSEMODEL_H
+#endif //MAPPERNODE_LINEMODEL_H

@@ -4,7 +4,7 @@
 
 #include "model.h"
 #include "entity.h"
-#include "tools.h"
+
 #include <fstream>
 
 Model::Model(const string &file) {
@@ -39,6 +39,8 @@ Model::Model(const string &file) {
     _W_a = _W_a.array().pow(2);
     f >> _mahalanobis_strict >> _mahalanobis_flex >> _mahalanobis_aug >>
       _dop_sigma;
+    _parameter_mins.resize(_parameter_count);
+    _parameter_maxs.resize(_parameter_count);
     for (int i = 0; i < _parameter_count; i++)
         f >> _parameter_mins(i);
     for (int i = 0; i < _parameter_count; i++)
@@ -64,22 +66,23 @@ Model::Model(const string &file) {
          << _parameter_maxs.transpose() << endl;
 }
 
-MatrixXd Model::dop(const Entity &e, const Aggregate &a) const {
-    Matrix<double, Dynamic, 12> df = dfsn(e, a);
-    MatrixXd Jmes = df(all, {10});
-    MatrixXd H = df(all, {0, 1, 2, 3, 4, 5});
-    MatrixXd En = MatrixXd::Zero(6, 6);
+void Model::dop(Entity &e, const Aggregate &a) const {
+    auto df = dfsn(e, a);
+    auto J = df(all, _dfs_measurement_error_indexes);
+    auto H = df(all, _dfs_parameter_indexes);
+    MatrixXd En = MatrixXd::Zero(_parameter_count, _parameter_count);
     for (int i = 0; i < df.rows(); i++)
         En +=
                 (H(i, all).transpose() *
-                 (Jmes(i, all) * _dop_sigma * _dop_sigma * Jmes(i, all).transpose()).inverse() *
+                 (J(i, all) * _dop_sigma * _dop_sigma
+                  * J(i, all).transpose()).inverse() *
                  H(i, all));
     En = En.inverse();
     cout << "En: " << endl << En << endl;
-    if (!isPsd(En)) {
+    if (!is_psd(En)) {
         throw std::runtime_error("Non positive semi-definite matrix!");
     }
-    return En;
+    e._E = En;
 }
 
 VectorXd Model::fsn(const Entity &e, const Aggregate &a) const {
@@ -98,4 +101,30 @@ MatrixXd Model::dfsn(const Entity &e, const Aggregate &a) const {
         ans.row(i) = dfs(e, a._data_vector[i]);
     }
     return ans;
+}
+
+void Model::ap_dop(Entity &e, const Aggregate &a) const {
+    auto df = dfsn(e, a);
+    auto J = df(all, _dfs_measurement_error_indexes);
+    auto H = df(all, _dfs_parameter_indexes);
+    auto S = H * e._E * H.transpose() + J * e.m->_W_a * J.transpose();
+    for (int i = 0; i < H.rows(); i++) {
+        auto K = e._E * H(i, all).transpose() / S(i, i);
+        auto L = e.m->I - K * H(i, all);
+        e._E = L * e._E * L.transpose() + K * J(i, all) * e.m->_W_a *
+                                          J(i, all).transpose() *
+                                          K.transpose();
+        e._E = (e._E + e._E.transpose()) / 2;
+    }
+    cout << "E Eigenvalues after: " << e._E.eigenvalues().transpose() << endl;
+    cout << "E: " << endl << e._E.diagonal().transpose() << endl;
+    if (!is_psd(e._E)) {
+        throw std::runtime_error("Non positive semi-definite matrix!");
+    }
+    // system propagation
+    e._E = e._E + e.m->_Q_a;
+}
+
+double Model::fs(const Entity &e, const Data &d) const {
+    return fss(e._p, d._pose, d.get_rotated_measurement());
 }

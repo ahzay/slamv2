@@ -5,11 +5,11 @@
 #include "ellipsemodel.h"
 #include <Eigen/Eigenvalues>
 #include "entity.h"
-#include "tools.h"
+
 
 EllipseModel::EllipseModel(const string &file) : Model(file) {}
 
-VectorXd EllipseModel::dfs(const Entity &e, const Data &d) const {
+Matrix<double, 1, -1> EllipseModel::dfs(const Entity &e, const Data &d) const {
     const auto measurement = d.get_rotated_measurement();
     ad::var xc(e._p(0)), yc(e._p(1)), th(e._p(2)), aa(e._p(3)), b(e._p(4)), ee(e._p(5)), xp(d._pose(0)),
             yp(d._pose(1)),
@@ -37,18 +37,14 @@ VectorXd EllipseModel::dfs(const Entity &e, const Data &d) const {
     return ans;
 }
 
-double EllipseModel::fs(const Entity &e, const Data &d) const {
-    return fss<double>(e._p, d._pose, d.get_rotated_measurement());
-}
-
 
 VectorXd EllipseModel::init(const Aggregate &a) const {
     const auto xy = a.get_xy_mat();
     const auto loc = a._pose;
     auto x = xy.col(0), y = xy.col(1);
     auto *p = new double[11];
-    MatrixXd m({{cov(x, x), cov(x, y)},
-                {cov(y, x), cov(y, y)}});
+    MatrixXd m({{vector_cov(x, x), vector_cov(x, y)},
+                {vector_cov(y, x), vector_cov(y, y)}});
     JacobiSVD<MatrixXd> svd(m, ComputeFullU | ComputeFullV);
     auto V = svd.matrixV();
     auto D = svd.singularValues();
@@ -101,7 +97,7 @@ struct EllipseModel::LossFunction {
         T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
         residual[0] = // log(
                 pow((1. + p[4]) * (1. + p[3]),
-                    2.) // penalty on area
+                    3.) // penalty on area
                 // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
                 * (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),
                        p[5]) -
@@ -115,7 +111,7 @@ private:
     double _y;
 };
 
-VectorXd EllipseModel::ls(const Aggregate &a) const {
+void EllipseModel::ls(Entity &e, const Aggregate &a) const {
     const auto xydata = a.get_xy_mat();
     VectorXd xdata = xydata(all, 0);
     VectorXd ydata = xydata(all, 1);
@@ -159,7 +155,7 @@ VectorXd EllipseModel::ls(const Aggregate &a) const {
             problem[i].SetParameterLowerBound(pa[i], 1, p0[10]);
     }
     ceres::Solver::Options options;
-    options.num_threads = 24;
+    options.num_threads = 16;
     options.minimizer_progress_to_stdout = false;
     options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
@@ -201,7 +197,8 @@ VectorXd EllipseModel::ls(const Aggregate &a) const {
         goto anglefix;
     }
     cout << "LS YIELDS: " << ans.transpose() << endl;
-    return ans;
+    e._p = ans;
+    dop(e, a);
 }
 
 struct EllipseModel::CostFunction {
@@ -253,7 +250,7 @@ private:
     MatrixXd _ap_dop;
 };
 
-VectorXd EllipseModel::ls(Entity &e, const Aggregate &a) const {
+void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     const auto dan = a.get_rotated_measurement_mat();
     const auto xy = a.get_xy_mat();
     VectorXd d = dan.col(0);
@@ -295,7 +292,7 @@ VectorXd EllipseModel::ls(Entity &e, const Aggregate &a) const {
     // if enough points we assume that we see enough of the ellipse
     // for an accurate mean
     // TODO: change to N
-    if (x.size() > 35) {
+    if (x.size() > 45) {
         if (a._pose[0] - x.mean() > 0) // robot on right of shape
             problem.SetParameterUpperBound(n_p, 0, x.mean()); // x
         else
@@ -307,7 +304,7 @@ VectorXd EllipseModel::ls(Entity &e, const Aggregate &a) const {
     }
     // solve
     ceres::Solver::Options options;
-    options.num_threads = 24;
+    options.num_threads = 16;
     options.minimizer_progress_to_stdout = false;
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
@@ -317,9 +314,10 @@ VectorXd EllipseModel::ls(Entity &e, const Aggregate &a) const {
     ceres::Solve(options, &problem, &summary);
     // fixes
     VectorXd ans = Map<Vector<double, 6>>(n_p);
-    ans.conservativeResize(6 + d.size());
+    //ans.conservativeResize(6 + d.size());
+    Aggregate n_a(a);
     for (int i = 0; i < d.size(); i++)
-        ans[i + 6] = n_d[i];
+        n_a._data_vector[i]._measurement(0) = n_d[i];
     anglefix:
     if (ans(2) > 2 * M_PI) {
         ans(2) -= 2 * M_PI;
@@ -330,8 +328,8 @@ VectorXd EllipseModel::ls(Entity &e, const Aggregate &a) const {
         goto anglefix;
     }
     cout << "AP_LS YIELDS: " << ans(seq(0, 5)).transpose() << endl;
-    return ans;
-    // new DOP has to be calculated externally
+    e._p = ans(seq(0, 5));
+    ap_dop(e, n_a);
 }
 
 bool EllipseModel::safety(Entity &e) const {
@@ -362,22 +360,17 @@ bool EllipseModel::safety(Entity &e) const {
     return false;
 }
 
-void EllipseModel::init_post(Entity &e, const Aggregate &a) const {
-
-}
+void EllipseModel::init_post(Entity &e, const Aggregate &a) const {}
 
 bool EllipseModel::associate(const Entity &e, const Data &d) const {
     return true;
 }
 
-void EllipseModel::augment_post(Entity &e, const Data &d) const {
-
-}
+void EllipseModel::augment_post(Entity &e, const Data &d) const {}
 
 
-template<typename T>
-T EllipseModel::fss(const VectorXd &p, const VectorXd &pose, const VectorXd &rotated_measurement) const {
-    return ft<T>(
+double EllipseModel::fss(const VectorXd &p, const VectorXd &pose, const VectorXd &rotated_measurement) const {
+    return ft<double>(
             p(0), p(1), p(2), p(3), p(4), p(5),
             pose(0), pose(1), rotated_measurement(0), rotated_measurement(1),
             0, 0);

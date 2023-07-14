@@ -11,6 +11,7 @@ bool Scan::check_continuity(Data data) const {
                                        cos(data._measurement(1) - _data_vector.back()._measurement(1))));
     bool ans = angle_variation > _options.angle_tolerance || dist_variation > _options.distance_tolerance;
     if (ans) {
+        cout << "Continuity broken at: " << data.get_xy().transpose() << endl;
         cout << "Dist variation: " << dist_variation << endl
              << "Angle variation: " << angle_variation << endl
              << "Dist tolerance " << _options.distance_tolerance << endl
@@ -39,9 +40,9 @@ void Scan::read_scan(const int n) {
     // ,rows
     f >> cbuf >> rows;
     cout << "pose: " << _pose.transpose() << endl;
-    flush();
+    _data_vector.empty();
     // get data
-    for (int i = _options.prune; i < rows-_options.prune-1; i++) {
+    for (int i = _options.prune; i < rows - _options.prune; i++) {
         Vector<double, 4> bvec;
         f >> bvec(0) >> cbuf >> bvec(1) >> cbuf >> bvec(2) >> cbuf >> bvec(3);
         if (bvec(2) > 0 && bvec(2) < _options.max_scan_distance) { // restriction on min/max distance
@@ -51,6 +52,7 @@ void Scan::read_scan(const int n) {
     // mult and error
     for (auto &d: _data_vector) {
         double error = (-0.01 + (rand() / (RAND_MAX / 0.02)));
+        error = 0;
         d._measurement(0) += error;
         d._measurement(0) *= _options.env_multiplier;
     }

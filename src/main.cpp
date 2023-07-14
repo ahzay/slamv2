@@ -35,7 +35,7 @@ using namespace std;
   ls.push_back({10, 5});
   ls.push_back({10, 6});
   ls.push_back({11, 6});
-  ls.push_back({12, 6});
+  ap_ls.push_back({12, 6});
   ls.push_back({13, 6});
   ls.push_back({14, 6});
   ls.push_back({15, 6});
