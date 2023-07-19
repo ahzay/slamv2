@@ -19,6 +19,6 @@ elif [ "$(ls -A "$folder")" ]; then
 fi
 # Use the folder location in your script
 echo "Copying to: $folder"
-cp ./build*/*png $folder
+cp ./src/cmake-build-debug-docker/*png $folder
 cp ./data/shared_data/cur_env.ttt $folder
-cp -r ./data/shared_data/scans/ $folder
+cp -r ./src/cmake-build-debug-docker/scans/ $folder

@@ -43,8 +43,10 @@ int main(int argc, char *argv[]) {
                 v.add_ellipse(e._p);
             else v.add_segment(e._p, e._t);
         v.save();
+        system(("gnuplot " + to_string(cnt - 1) + ".gpt > " +
+               to_string(cnt - 1) + ".png").c_str());
     }
     // render plots
-    system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");
+    //system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");
     return 0;
 }

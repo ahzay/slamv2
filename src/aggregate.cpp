@@ -41,7 +41,7 @@ void Aggregate::flush() {
     for (auto &d: _data_vector)
         d.life--;
     erase_if(_data_vector, [](auto d) { return d.life < 1; });
-    _pose.setConstant(NAN);
+    //_pose.setConstant(NAN);
 }
 
 /*Aggregate::Aggregate(const MatrixX2d &mat, const Vector3d &pose) {
@@ -85,6 +85,7 @@ void Aggregate::push_back(const Aggregate &a) {
 }
 
 void Aggregate::reorder() {
+    if(_data_vector.empty()) return;
     self_sort();
     auto max_difference_iter = _data_vector.begin();
     double max_difference = (_data_vector.front().get_xy() - _data_vector.back().get_xy()).norm();

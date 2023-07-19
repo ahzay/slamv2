@@ -96,7 +96,7 @@ struct EllipseModel::LossFunction {
         T f1 = ((_x - p[0]) * cos(p[2]) + (_y - p[1]) * sin(p[2])) / p[3];
         T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
         residual[0] = // log(
-                pow((1. + p[4]) * (1. + p[3]), 0.3); // penalty on area
+                pow((p[4]) * (p[3]), 0.5); // penalty on area
         residual[1] =
                 // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
                 (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),

@@ -13,6 +13,7 @@ Handler::Handler(const deque<Model *> &models,
                                                   ua(options), uua(options), v(nullptr) {}
 
 void Handler::preprocess_scan(Scan &scan) {
+    cout << "start preprocessing" << endl;
     // for speedup
     if (uua._data_vector.size() > o.init_npoints * o.npoints_mult) {
         auto tmp = Scan(o);
@@ -28,7 +29,7 @@ void Handler::preprocess_scan(Scan &scan) {
         uua = tmp;
     }
     //
-    //cout << "associating" << endl;
+    cout << "associating" << endl;
     Aggregate aa; // associated aggregate (only for display)
     Scan buf(o), buff(o);
     buf.push_back(uua);
@@ -75,6 +76,7 @@ void Handler::preprocess_scan(Scan &scan) {
     v->add_data(ps._data_vector.back(), "orange");
     v->add_data(ps._data_vector.front(), "yellow");
     map.run_augment();
+    cout << "done preprocessing!" << endl;
 }
 
 void Handler::process_scan() {
@@ -117,6 +119,7 @@ void Handler::f_continuous() {
         cout << "not continuous!" << endl;
         uua.push_back(ua);
         state = s_begin;
+        f_begin();
         return;
     }
     ua.push_back(_data);
@@ -185,10 +188,9 @@ void Handler::end(bool at_scan_end) {
                                  });
         if (min_it != running_fsms.end())
             map.add_entity(min_it->e, min_it->_a);
-        else if (!non_running_fsms.empty())
-            uua.push_back(non_running_fsms.back()._a);
     }
-
+    if (!non_running_fsms.empty() && !at_scan_end)
+        uua.push_back(non_running_fsms.back()._a);
     // TODO: remove uncertain ellipses maybe?
     fsms_are_done.clear();
     fsms.clear();

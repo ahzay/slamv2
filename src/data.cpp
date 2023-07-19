@@ -14,8 +14,8 @@ Vector2d Data::get_rotated_measurement() const {
 
 Vector2d Data::get_xy() const {
     auto dan = get_rotated_measurement();
-    return Vector2d(dan(0) * cos(dan(1)) + _pose(0),
-                    dan(0) * sin(dan(1)) + _pose(1));
+    return {dan(0) * cos(dan(1)) + _pose(0),
+            dan(0) * sin(dan(1)) + _pose(1)};
 }
 
 void Data::change_referential(Vector3d new_pose) {
