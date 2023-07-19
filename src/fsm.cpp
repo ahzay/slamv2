@@ -8,7 +8,8 @@ Fsm::Fsm(Model *model, const Aggregate &a) : _a(a),
                                              e(model, a),
                                              ekf(e),
                                              _data(Vector2d(),
-                                                   Vector3d()) {}
+                                                   Vector3d(),
+                                                   model->_options.data_longevity) {}
 
 
 State Fsm::process_measurement(Data &data) {
@@ -66,7 +67,7 @@ void Fsm::f_least_squares(const bool is_scan_end) {
         }
 }
 
-bool Fsm::operator<(const Fsm &other_fsm) const {
+/*bool Fsm::operator<(const Fsm &other_fsm) const {
     // assuming we are in flexible (TODO: account if not?)
     return (ekf._mahalanobis < other_fsm.ekf._mahalanobis);
-}
+}*/

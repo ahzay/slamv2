@@ -16,7 +16,7 @@ namespace ad = autodiff;
 
 class LineModel : public Model {
 public:
-    explicit LineModel(const string &file);
+    explicit LineModel(const string &file, const CmdLineOptions &options);
 
     Matrix<double, 1, -1> dfs(const Entity &e, const Data &d) const override;
 

@@ -6,7 +6,7 @@
 #include <Eigen/Eigenvalues>
 #include "entity.h"
 
-LineModel::LineModel(const string &file) : Model(file) {}
+LineModel::LineModel(const string &file, const CmdLineOptions &options) : Model(file, options) {}
 
 
 Matrix<double, 1, -1> LineModel::dfs(const Entity &e, const Data &d) const {
@@ -46,7 +46,7 @@ void LineModel::ls(Entity &e, const Aggregate &a) const {
     p << r, aa; //, angles.minCoeff(), angles.maxCoeff();
     // cout << p.transpose() << endl;
     e._p = p;
-    dop(e,a);
+    dop(e, a);
 }
 
 struct LineModel::CostFunction {
@@ -83,7 +83,7 @@ private:
 };
 
 void LineModel::ap_ls(Entity &e, const Aggregate &a) const {
-    cout<<"line ap_ls: "<<endl;
+    cout << "line ap_ls: " << endl;
     const auto dan = a.get_rotated_measurement_mat();
     const auto xy = a.get_xy_mat();
     VectorXd d = dan.col(0);
@@ -111,12 +111,6 @@ void LineModel::ap_ls(Entity &e, const Aggregate &a) const {
         problem.AddResidualBlock(cost_function, nullptr, n_p, &n_d[i]);
     }
     // bounds
-    /*problem.SetParameterLowerBound(n_p, 3, 0.25); // a
-    prblem.SetParameterLowerBound(n_p, 4, 0.25); // b
-    problem.SetParameterLowerBound(n_p, 5, 0.3);  // eps <- very important
-    problem.SetParameterUpperBound(n_p, 3, 30);   // a
-    problem.SetParameterUpperBound(n_p, 4, 30);   // b
-    problem.SetParameterUpperBound(n_p, 5, 1.7);*/  // eps
     for (int j = 0; j < _parameter_count; j++) {
         problem.SetParameterLowerBound(n_p, j, _parameter_mins[j]);
         problem.SetParameterUpperBound(n_p, j, _parameter_maxs[j]);
@@ -128,7 +122,7 @@ void LineModel::ap_ls(Entity &e, const Aggregate &a) const {
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
     // options.initial_trust_region_radius = 1e8;                 // important
-    options.max_num_iterations = 100;
+    options.max_num_iterations = 5;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     // fixes
@@ -149,6 +143,8 @@ void LineModel::ap_ls(Entity &e, const Aggregate &a) const {
     cout << "AP_LS YIELDS: " << ans(seq(0, 1)).transpose() << endl;
     e._p = ans(seq(0, 1));
     ap_dop(e, n_a);
+    for (const auto &d: n_a._data_vector)
+        augment_post(e, d);
 }
 
 bool LineModel::safety(Entity &e) const {
@@ -181,17 +177,35 @@ bool LineModel::associate(const Entity &e, const Data &d) const {
             x * pow(sin(e._p(1)), 2) - y * sin(e._p(1)) * cos(e._p(1)) + e._p(0) * cos(e._p(1));
     double y_p =
             y * pow(cos(e._p(1)), 2) - x * sin(e._p(1)) * cos(e._p(1)) + e._p(0) * sin(e._p(1));
+    Vector2d p(x_p, y_p);
     double angle = atan2(y_p, x_p);
     double dist_p = sqrt(pow(x_p - x, 2) + pow(y_p - y, 2));
     // double r = sqrt(x_p * x_p + y_p * y_p); // for dist check
     //  check that angle is close enough to min/max or between them
-    double angle_tolerance = 0.1;
-    double dist_tolerance = 0.1;
-    if ((angle > e._t(0) - angle_tolerance && angle < e._t(1) + angle_tolerance) &&
+    double angle_tolerance = _options.angle_tolerance;
+    double dist_tolerance = _options.distance_tolerance;
+    /*if ((angle > e._t(0) - angle_tolerance && angle < e._t(1) + angle_tolerance) &&
         (dist_p < dist_tolerance))
         return true;
     else
+        return false;*/
+    double z_0 = e._p(0) / cos(abs(e._t(0) - e._p(1)));
+    double z_1 = e._p(0) / cos(abs(e._t(1) - e._p(1)));
+    double x_0 = z_0 * cos(e._t(0));
+    double y_0 = z_0 * sin(e._t(0));
+    double x_1 = z_1 * cos(e._t(1));
+    double y_1 = z_1 * sin(e._t(1));
+    Vector2d t_0(x_0, y_0);
+    Vector2d t_1(x_1, y_1);
+    double euc = min((p - t_1).norm(),
+                     (p - t_0).norm());
+    if ((angle >= min(e._t(0), e._t(1)) &&
+         angle <= max(e._t(0), e._t(1))) ||
+        euc <= _options.eucledian_tolerance)
+        return true;
+    else
         return false;
+
 }
 
 void LineModel::augment_post(Entity &e, const Data &d) const {
@@ -204,9 +218,9 @@ void LineModel::augment_post(Entity &e, const Data &d) const {
     double y_p =
             y * pow(cos(e._p(1)), 2) - x * sin(e._p(1)) * cos(e._p(1)) + e._p(0) * sin(e._p(1));
     double angle = atan2(y_p, x_p);
-    if (angle < e._t(0))
+    if (angle < min(e._t(0), e._t(1)))
         e._t(0) = angle;
-    if (angle > e._t(1))
+    if (angle > max(e._t(0), e._t(1)))
         e._t(1) = angle;
 }
 

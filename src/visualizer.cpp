@@ -90,6 +90,8 @@ void Visualizer::add_segment(Eigen::VectorXd p, Eigen::VectorXd t) {
 
 void Visualizer::save() { of.close(); }
 
+
+
 void Visualizer::add_aggregate(const Aggregate &a, const std::string &color) {
     of << R"(plot "-" w p ls 7 lw 0.05 lc rgb ")" << "blue" << "\"" << endl;
     of << a._pose(0) << " " << a._pose(1) << endl;
@@ -97,5 +99,11 @@ void Visualizer::add_aggregate(const Aggregate &a, const std::string &color) {
     of << R"(plot "-" w p ls 7 lw 0.025 lc rgb ")" << color << "\"" << endl;
     for (const auto &d: a._data_vector)
         of << d.get_xy()(0) << " " << d.get_xy()(1) << endl;
+    of << "e" << endl;
+}
+
+void Visualizer::add_data(const Data &d, const string &color) {
+    of << R"(plot "-" w p ls 7 lw 0.025 lc rgb ")" << color << "\"" << endl;
+    of << d.get_xy()(0) << " " << d.get_xy()(1) << endl;
     of << "e" << endl;
 }

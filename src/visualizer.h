@@ -18,6 +18,7 @@ public:
 
     void add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts, const string &color);
 
+    void add_data(const Data &d, const string &color);
 
     void add_aggregate(const Aggregate &a, const string &color);
 

@@ -15,7 +15,7 @@ public:
 
     void print() const;
 
-    double mahalanobis(Data &data);
+    double mahalanobis(const Data &data) const;
 
     bool operator==(const Entity &oe) const;
 

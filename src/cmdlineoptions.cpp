@@ -6,7 +6,7 @@
 #include <iostream>
 
 CmdLineOptions::CmdLineOptions(int argc, char **argv) {
-    if (argc < 10)
+    if (argc < 13)
         throw std::runtime_error("Not enough input arguments.");
     scan_number = stoi(argv[1]);
     prune = stoi(argv[2]);
@@ -14,7 +14,10 @@ CmdLineOptions::CmdLineOptions(int argc, char **argv) {
     stride = stoi(argv[4]);
     distance_tolerance = strtof(argv[5], nullptr);
     angle_tolerance = strtof(argv[6], nullptr);
-    env_multiplier = strtof(argv[7], nullptr);
-    max_scan_distance = strtof(argv[8], nullptr);
-    data_folder = string(argv[9]);
+    eucledian_tolerance = strtof(argv[7], nullptr);
+    env_multiplier = strtof(argv[8], nullptr);
+    max_scan_distance = strtof(argv[9], nullptr);
+    data_longevity = stoi(argv[10]);
+    npoints_mult = stoi(argv[11]);
+    data_folder = string(argv[12]);
 }

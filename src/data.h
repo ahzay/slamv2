@@ -13,9 +13,13 @@ class Entity;
 
 class Data {
 public:
-    Data(Vector2d measurement, Vector3d pose);
+    Data(Vector2d measurement, Vector3d pose,int longevity);
 
     Vector2d get_xy() const;
+
+    void change_referential(Vector3d new_pose);
+
+    void normalize();
 
     Vector2d get_rotated_measurement() const;
 
@@ -23,6 +27,7 @@ public:
     Vector2d _measurement;          // data (measurement)
     Vector3d _pose;          // position at measurement
     Entity *_e = nullptr; // associated entity
+    int life;
 };
 
 

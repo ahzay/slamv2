@@ -8,7 +8,7 @@ Entity::Entity(Model *model, const Eigen::VectorXd &p, const Eigen::MatrixXd &E)
     _t.conservativeResize(m->_post_attributes_count);
 }
 
-double Entity::mahalanobis(Data &data) {
+double Entity::mahalanobis(const Data &data) const {
     double _r = -m->fs(*this, data);
     //
     //MatrixXd df = m->_dfs(p, data.p, Matrix<double, 1, Dynamic>(data.d));

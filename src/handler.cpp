@@ -7,48 +7,80 @@
 Handler::Handler(const deque<Model *> &models,
                  const CmdLineOptions &options) : _models(models),
                                                   _data(Data(Vector2d(),
-                                                             Vector3d())),
-                                                  o(options), ps(options), ua(options),
-                                                  v(nullptr) {}
+                                                             Vector3d(),
+                                                             options.data_longevity)),
+                                                  o(options), ps(options),
+                                                  ua(options), uua(options), v(nullptr) {}
 
 void Handler::preprocess_scan(Scan &scan) {
-    cout << "associating" << endl;
+    // for speedup
+    if (uua._data_vector.size() > o.init_npoints * o.npoints_mult) {
+        auto tmp = Scan(o);
+        mt19937 gen(random_device{}());
+        tmp._data_vector.resize(o.init_npoints * o.npoints_mult,
+                                Data(Vector2d(),
+                                     Vector3d(),
+                                     o.data_longevity));
+        sample(uua._data_vector.begin(),
+               uua._data_vector.end(),
+               tmp._data_vector.begin(),
+               o.init_npoints * o.npoints_mult, gen);
+        uua = tmp;
+    }
+    //
+    //cout << "associating" << endl;
     Aggregate aa; // associated aggregate (only for display)
+    Scan buf(o), buff(o);
+    buf.push_back(uua);
+    buf.push_back(scan);
+    int prev_size = 0;
+    do {
+        prev_size = buff._data_vector.size();
+        buff.clear();
+        for (auto &d: buf._data_vector) {
+            if (map.associate_data(d)) {
+                map.add_augment(d);
+                aa.push_back(d);
+                d.life = 0;
+            } else {
+                buff.push_back(d);
+            }
+            buf.clear();
+            buf.push_back(buff);
+        }
+    } while (prev_size != buff._data_vector.size());
+    ps.push_back(buff);
+    /*for (auto &d: uua._data_vector) {
+        if (map.associate_data(d)) {
+            map.add_augment(d);
+            aa.push_back(d);
+            d.life = 0;
+        } else {
+            ps.push_back(d);
+        }
+    }
+
     for (auto &d: scan._data_vector) {
         if (map.associate_data(d)) {
             map.add_augment(d);
             aa.push_back(d);
-            //v.add_points(Matrix<double, 1, 2>(d.d({0, 1})), "olive");
         } else {
-            //v.add_points(Matrix<double, 1, 2>(d.d({0, 1})), "red");
             ps.push_back(d);
-            //d_v1.push_back(d);
         }
-    }
+    }*/
+    uua.clear();
+    ps.reorder();
     v->add_aggregate(aa, "green");
     v->add_aggregate(ps, "red");
-
-    // debug grid for association viz
-    /*for (double i = -11; i < 12; i += 0.2)
-      for (double j = -20; j < 21; j += 0.2) {
-        // transform into d an
-        double relx = i - scan.loc(0);
-        double rely = j - scan.loc(1);
-        double an = atan2(rely, relx);
-        double d = sqrt(relx * relx + rely * rely);
-        Data dat(Vector<double, 4>({i, j, d, an}), scan.loc);
-        if (map.associate_data(dat))
-          v.add_points(Matrix<double, 1, 2>(dat.d({0, 1})), "purple");
-        else
-          v.add_points(Matrix<double, 1, 2>(dat.d({0, 1})), "yellow");
-      }*/
+    v->add_data(ps._data_vector.back(), "orange");
+    v->add_data(ps._data_vector.front(), "yellow");
     map.run_augment();
 }
 
 void Handler::process_scan() {
     for (auto &data: ps._data_vector)
         process_measurement(data);
-    end_scan();
+    end(true);
 }
 
 State Handler::process_measurement(Data &data) {
@@ -73,7 +105,8 @@ State Handler::process_measurement(Data &data) {
 
 void Handler::f_begin() {
     // reset
-    ua.flush(_data);
+    ua.clear();
+    ua.push_back(_data);
     n = 1;
     state = s_continuous;
     fsms.clear();
@@ -82,6 +115,7 @@ void Handler::f_begin() {
 void Handler::f_continuous() {
     if (ua.check_continuity(_data)) {
         cout << "not continuous!" << endl;
+        uua.push_back(ua);
         state = s_begin;
         return;
     }
@@ -109,84 +143,65 @@ void Handler::f_fsm() {
                 fsms_are_done.end())
                 fsms_are_done.push_back(&fsm); // push back if not
         }
-        // viz for debugging!
-        /*else {
-          if (fsm._model->_model_index == 0)
-            v.add_ellipse(fsm._ekf->_p, "b-");
-          if (fsm._model->_model_index == 1)
-            v.add_line(fsm._ekf->_p, "b-");
-        }*/
-        //
     }
-    if (fsms_are_done.size() == fsms.size()) // not all done
-        f_close_fsms(); // we assume that the most accurate model has lowest r
+    if (fsms_are_done.size() == fsms.size()) // all done
+        end(false); // we assume that the most accurate model has lowest r
 }
 
-void Handler::f_close_fsms() {
-    Fsm *min_fsm = fsms_are_done.back();
-    if (min_fsm != nullptr) {
-        if (min_fsm->state > 3) { // TODO: make sure we are not adding sink fsms
-            min_fsm->f_least_squares(true);
-            map.add_entity(min_fsm->e);
-            map.entities.back().m->init_post(map.entities.back(),
-                                             min_fsm->_a);
-        }
-    }
-
-    // reset attributes
-    fsms_are_done.clear();
-    fsms.clear();
-    n = 0;
-    state = s_begin;
-    // call f_begin as to not lose data point for new cycle
-    f_begin();
-}
-
-void Handler::end_scan() {
+void Handler::end(bool at_scan_end) {
     // stl find "minimal" fsm (see < in fsm)
     // first make a vector of only running fsms
-    cout << "Force ending scan: " << endl;
-    vector<Fsm> running_fsms;
-    std::copy_if(
+    cout << "Ending fsms: " << endl;
+    vector<Fsm> running_fsms, non_running_fsms;
+    partition_copy(
             fsms.begin(),
             fsms.end(),
-            std::back_inserter(running_fsms),
-            [](const Fsm &fsm) -> bool { return (fsm.state == s_fsm_strict); });
+            back_inserter(running_fsms),
+            back_inserter(non_running_fsms),
+            [](const Fsm &fsm) -> bool {
+                return fsm.state == s_fsm_strict ||
+                       fsm.state == s_fsm_close;
+            });
     // then least squares
     cout << "running fsms: " << running_fsms.size() << endl;
-    for (auto &fsm: running_fsms) {
+    for (auto &fsm: running_fsms)
         fsm.f_least_squares(true);
-        //cout << "E: " << endl << fsm._ekf->_E.diagonal().transpose() << endl;
+
+    // find fsm that has most points inside
+    if (!running_fsms.empty()) {
+        vector<Fsm>::const_iterator min_it = running_fsms.end();
+        if (!at_scan_end)
+            min_it = unique_max(running_fsms,
+                                [](const Fsm &f1, const Fsm &f2) {
+                                    return f1._a._data_vector.size() < f2._a._data_vector.size();
+                                },
+                                [](const Fsm &f1, const Fsm &f2) {
+                                    return f1._a._data_vector.size() == f2._a._data_vector.size();
+                                });
+        if (at_scan_end || min_it == running_fsms.end())
+            min_it = min_element(running_fsms.begin(), running_fsms.end(),
+                                 [](const Fsm &f1, const Fsm &f2) {
+                                     return f1.ekf._mahalanobis < f2.ekf._mahalanobis;
+                                 });
+        if (min_it != running_fsms.end())
+            map.add_entity(min_it->e, min_it->_a);
+        else if (!non_running_fsms.empty())
+            uua.push_back(non_running_fsms.back()._a);
     }
 
-    // then find the minimum
-    vector<Fsm>::iterator min_it =
-            min_element(running_fsms.begin(), running_fsms.end());
-    if (min_it != running_fsms.end()) {
-        map.add_entity(min_it->e);
-        map.entities.back().m->init_post(map.entities.back(),
-                                         min_it->_a);
-    }
-    // remove uncertain ellipses
-    // std::erase_if(map.entities, [](const auto& e) {
-    //  return e.E.diagonal().array().abs().sum() > 100;
-    //});
-    // reset iekfs for map
-    /*
-    map.iekfs.clear();
-    for (auto &e: map.entities)
-        map.iekfs.push_back(Iekf(&e));*/
-    // reset attributes
-    // maybe there is a more elegant way for this?
-    for (auto &iekf: map.iekfs)
-        iekf.a.flush();
-    ua.flush();
-    ps.flush();
+    // TODO: remove uncertain ellipses maybe?
     fsms_are_done.clear();
     fsms.clear();
-    n = 0;
     state = s_begin;
-    cout << "Force ended scan with entities: " << endl;
-    for (const auto &e: map.entities)
-        e.print();
+    if (at_scan_end) {
+        uua.push_back(ua); // important
+        for (auto &iekf: map.iekfs)
+            iekf.a.clear();
+        ua.clear();
+        ps.clear();
+        uua.flush();
+        cout << "Force ended scan with entities: " << endl;
+        for (const auto &e: map.entities)
+            e.print();
+    } else f_begin();
 }

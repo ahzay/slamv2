@@ -7,7 +7,7 @@
 
 #include <fstream>
 
-Model::Model(const string &file) {
+Model::Model(const string &file, const CmdLineOptions &options) : _options(options) {
     int dims = 1; // for 2d
     ifstream f(file.c_str());
     if (!f.is_open())
@@ -37,7 +37,7 @@ Model::Model(const string &file) {
     for (int i = 0; i < dims; i++)
         f >> _W_a(i, i);
     _W_a = _W_a.array().pow(2);
-    f >> _mahalanobis_strict >> _mahalanobis_flex >> _mahalanobis_aug >>
+    f >> _mahalanobis_strict >> _mahalanobis_flex >> _mahalanobis_aug_min >> _mahalanobis_aug >>
       _dop_sigma;
     _parameter_mins.resize(_parameter_count);
     _parameter_maxs.resize(_parameter_count);
@@ -45,6 +45,7 @@ Model::Model(const string &file) {
         f >> _parameter_mins(i);
     for (int i = 0; i < _parameter_count; i++)
         f >> _parameter_maxs(i);
+    f >> _ap_ls_forgetting_factor;
     f.close();
     // print
     cout << "model" << endl
@@ -60,10 +61,12 @@ Model::Model(const string &file) {
          << _W_a << endl
          << _mahalanobis_strict << endl
          << _mahalanobis_flex << endl
+         << _mahalanobis_aug_min << endl
          << _mahalanobis_aug << endl
          << _dop_sigma << endl
          << _parameter_mins.transpose() << endl
-         << _parameter_maxs.transpose() << endl;
+         << _parameter_maxs.transpose() << endl
+         << _ap_ls_forgetting_factor << endl;
 }
 
 void Model::dop(Entity &e, const Aggregate &a) const {
@@ -79,9 +82,9 @@ void Model::dop(Entity &e, const Aggregate &a) const {
                  H(i, all));
     En = En.inverse();
     cout << "En: " << endl << En << endl;
-    if (!is_psd(En)) {
+    /*if (!is_psd(En)) {
         throw std::runtime_error("Non positive semi-definite matrix!");
-    }
+    }*/
     e._E = En;
 }
 
@@ -123,6 +126,7 @@ void Model::ap_dop(Entity &e, const Aggregate &a) const {
     }
     // system propagation
     e._E = e._E + e.m->_Q_a;
+    //e._E *= (1 + _ap_ls_forgetting_factor);
 }
 
 double Model::fs(const Entity &e, const Data &d) const {

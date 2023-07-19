@@ -7,7 +7,7 @@
 #include "entity.h"
 
 
-EllipseModel::EllipseModel(const string &file) : Model(file) {}
+EllipseModel::EllipseModel(const string &file, const CmdLineOptions &options) : Model(file, options) {}
 
 Matrix<double, 1, -1> EllipseModel::dfs(const Entity &e, const Data &d) const {
     const auto measurement = d.get_rotated_measurement();
@@ -96,12 +96,12 @@ struct EllipseModel::LossFunction {
         T f1 = ((_x - p[0]) * cos(p[2]) + (_y - p[1]) * sin(p[2])) / p[3];
         T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
         residual[0] = // log(
-                pow((1. + p[4]) * (1. + p[3]),
-                    3.) // penalty on area
+                pow((1. + p[4]) * (1. + p[3]), 0.3); // penalty on area
+        residual[1] =
                 // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
-                * (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),
-                       p[5]) -
-                   1.); // +
+                (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),
+                     p[5]) -
+                 1.); // +
         // 1.);
         return true;
     }
@@ -134,7 +134,7 @@ void EllipseModel::ls(Entity &e, const Aggregate &a) const {
     for (unsigned i = 0; i < xdata.size(); i++)
         for (unsigned k = 0; k < n; k++) {
             ceres::CostFunction *cost_function =
-                    new ceres::AutoDiffCostFunction<LossFunction, 1, 6>(
+                    new ceres::AutoDiffCostFunction<LossFunction, 2, 6>(
                             new LossFunction(xdata(i), ydata(i)));
             problem[k].AddResidualBlock(cost_function, nullptr, pa[k]);
         }
@@ -309,7 +309,7 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
     // options.initial_trust_region_radius = 1e8;                 // important
-    options.max_num_iterations = 100;
+    options.max_num_iterations = 5;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     // fixes

@@ -205,7 +205,7 @@ public:
         f_begin();
     }
 
-    void end_scan() {
+    void end(bool at_scan_end) {
         // stl find "minimal" fsm (see < in fsm)
         // first make a vector of only running fsms
         vector<Fsm> running_fsms;

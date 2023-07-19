@@ -24,6 +24,35 @@ atan2(VectorXd y, VectorXd x);
 int
 sgn(double val);
 
+template<typename Container, typename Compare, typename EqualTo>
+typename Container::const_iterator
+unique_min(const Container &container, Compare comp, EqualTo eq) {
+    auto minIt = std::min_element(container.begin(), container.end(), comp);
+    int count = std::count_if(container.begin(), container.end(),
+                              [minVal = *minIt, eq](const auto &val) { return eq(val, minVal); }
+    );
+
+    if (count == 1) {
+        return minIt;
+    } else {
+        return container.end();
+    }
+}
+
+template<typename Container, typename Compare, typename EqualTo>
+typename Container::const_iterator
+unique_max(const Container &container, Compare comp, EqualTo eq) {
+    auto maxIt = std::max_element(container.begin(), container.end(), comp);
+    int count = std::count_if(container.begin(), container.end(),
+                              [maxVal = *maxIt, eq](const auto &val) { return eq(val, maxVal); }
+    );
+
+    if (count == 1) {
+        return maxIt;
+    } else {
+        return container.end();
+    }
+}
 enum State {
     s_begin,      // 0
     s_continuous, // 1

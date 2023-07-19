@@ -15,7 +15,7 @@ class Aggregate {
 public:
     Aggregate();
 
-    Aggregate(const MatrixX2d &mat, const Vector3d &pose);
+    //Aggregate(const MatrixX2d &mat, const Vector3d &pose);
 
     MatrixX2d get_measurement_mat() const;
 
@@ -23,8 +23,17 @@ public:
 
     MatrixX2d get_xy_mat() const;
 
+    void change_referential(Vector3d new_pose);
+
+    void self_sort();
+
+    void reorder();
+
     void push_back(const Data &data);
 
+    void push_back(const Aggregate &a);
+
+    void clear();
 
     void flush(const Data &data);
 

@@ -19,7 +19,7 @@ public:
 
     void run_augment();
 
-    void add_entity(const Entity &e);
+    void add_entity(const Entity &e, const Aggregate &a);
 
 
     deque<Entity> entities;

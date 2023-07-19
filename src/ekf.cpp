@@ -12,6 +12,7 @@ bool Ekf::update(const Data &d, const bool is_strict) {
     cout << "   p:" << _e._p.transpose() << endl;
     if (_e.m->safety(_e))
         cout << "forced safe values on p" << endl;
+    //_mahalanobis = _e.mahalanobis(d);
     r = -_e.m->fs(_e, d);
     df = _e.m->dfs(_e, d);
     H = df(_e.m->_dfs_parameter_indexes);
@@ -22,7 +23,7 @@ bool Ekf::update(const Data &d, const bool is_strict) {
     cout << "   S: " << S << endl;
     K = _e._E * H.transpose() * S.inverse();
     cout << "   K: " << K.transpose() << endl;
-    _mahalanobis = (r * r * S.inverse()).diagonal().sum();
+    _mahalanobis = (r * r * S.inverse()).diagonal().sum() + r * r;
     //_mahalanobis = (dst * dst * S.inverse()).diagonal().sum();
     cout << "   mahalanobis: " << _mahalanobis << endl;
     if (is_strict)
@@ -32,7 +33,7 @@ bool Ekf::update(const Data &d, const bool is_strict) {
         return true;
     // update
     cout << "   p" << endl;
-    _e._p = _e._p + K * r;
+    _e._p = _e._p + K * r; // TODO: make this more elegant (to eliminate all the previous calculations)
     cout << "   E" << endl;
     _e._E = (_e.m->I - K * H) * _e._E;
     // system propagation

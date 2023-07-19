@@ -22,7 +22,7 @@ public:
 
     State process_measurement(Data &data);
 
-    bool operator<(const Fsm &other_fsm) const;
+    //bool operator<(const Fsm &other_fsm) const;
 
     Data _data;
     Aggregate _a;

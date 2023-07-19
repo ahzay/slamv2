@@ -16,7 +16,7 @@ namespace ad = autodiff;
 
 class EllipseModel : public Model {
 public:
-    explicit EllipseModel(const string &file);
+    explicit EllipseModel(const string &file, const CmdLineOptions &options);
 
     Matrix<double, 1, -1> dfs(const Entity &e, const Data &d) const override;
 

@@ -6,16 +6,23 @@
 #include <fstream>
 
 bool Scan::check_continuity(Data data) const {
+    // TODO: normalize because angles don't mean the same thing at diff distances
+    // maybe add eucledian variation test if both other tests pass
     double dist_variation = abs(data._measurement(0) - _data_vector.back()._measurement(0));
     double angle_variation = abs(atan2(sin(data._measurement(1) - _data_vector.back()._measurement(1)),
                                        cos(data._measurement(1) - _data_vector.back()._measurement(1))));
-    bool ans = angle_variation > _options.angle_tolerance || dist_variation > _options.distance_tolerance;
+    double eucledian_variation = (data.get_xy() - _data_vector.back().get_xy()).norm();
+    bool ans = (angle_variation > _options.angle_tolerance ||
+               dist_variation > _options.distance_tolerance) &&
+               eucledian_variation > _options.eucledian_tolerance;
     if (ans) {
         cout << "Continuity broken at: " << data.get_xy().transpose() << endl;
         cout << "Dist variation: " << dist_variation << endl
              << "Angle variation: " << angle_variation << endl
+             << "Eucledian variation" << eucledian_variation << endl
              << "Dist tolerance " << _options.distance_tolerance << endl
-             << "Angle tolerance " << _options.angle_tolerance << endl;
+             << "Angle tolerance " << _options.angle_tolerance << endl
+             << "Eucledian tolerance" << _options.eucledian_tolerance << endl;
     }
     return ans;
 }
@@ -46,7 +53,7 @@ void Scan::read_scan(const int n) {
         Vector<double, 4> bvec;
         f >> bvec(0) >> cbuf >> bvec(1) >> cbuf >> bvec(2) >> cbuf >> bvec(3);
         if (bvec(2) > 0 && bvec(2) < _options.max_scan_distance) { // restriction on min/max distance
-            push_back(Data(bvec({2, 3}), _pose));
+            push_back(Data(bvec({2, 3}), _pose, _options.data_longevity));
         }
     }
     // mult and error

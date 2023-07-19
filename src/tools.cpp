@@ -10,6 +10,9 @@ sgn(double val) {
     return (double(0) < val) - (val < double(0));
 }
 
+
+
+
 VectorXd
 atan2(VectorXd y, VectorXd x) {
     VectorXd res(y.size());
@@ -18,6 +21,7 @@ atan2(VectorXd y, VectorXd x) {
     }
     return res;
 }
+
 // TODO: eliminates entity instead of stopping entire program
 bool is_psd(const MatrixXd &A) {
     // if (!A.isApprox(A.transpose(), 1e-8f)) {

@@ -14,8 +14,8 @@ public:
     CmdLineOptions(int argc, char *argv[]);
 
     string data_folder;
-    int scan_number, stride, prune, init_npoints;
-    double angle_tolerance, distance_tolerance, env_multiplier, max_scan_distance;
+    int scan_number, stride, prune, init_npoints, data_longevity,npoints_mult;
+    double angle_tolerance, distance_tolerance, env_multiplier, max_scan_distance,eucledian_tolerance;
 };
 
 

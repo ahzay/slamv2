@@ -10,6 +10,7 @@
 #include "fsm.h"
 #include "cmdlineoptions.h"
 #include "visualizer.h"
+#include <random>
 
 class Handler {
 public:
@@ -27,9 +28,9 @@ public:
 
     void f_fsm();
 
-    void f_close_fsms();
+    //void f_close_fsms();
 
-    void end_scan();
+    void end(bool at_scan_end);
 
     // attributes
     const deque<Model *> _models; // permanent
@@ -42,7 +43,7 @@ public:
     /*TODO: implement keeping unassociated and unprocessed data
      * have to figure our how to recheck for continuty (maybe
      * bring all the scans back to one and check continuity)*/
-    Aggregate uua; // unassociated and unused aggregate
+    Scan uua; // unassociated and unused aggregate
     vector<Fsm> fsms;
     vector<Fsm *> fsms_are_done;
     const CmdLineOptions o;
