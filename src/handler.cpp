@@ -107,6 +107,9 @@ State Handler::process_measurement(Data &data) {
 
 void Handler::f_begin() {
     // reset
+    //v->add_data(_data, "purple");
+    adjusted_init_npoints = o.init_npoints / _data._measurement(0) * 3;
+    cout << "adjusted init points: " << adjusted_init_npoints << endl;
     ua.clear();
     ua.push_back(_data);
     n = 1;
@@ -123,7 +126,7 @@ void Handler::f_continuous() {
         return;
     }
     ua.push_back(_data);
-    if (n < o.init_npoints - 1)
+    if (n < adjusted_init_npoints - 1)
         n++;
     else {
         state = s_fsm;
@@ -155,6 +158,8 @@ void Handler::end(bool at_scan_end) {
     // stl find "minimal" fsm (see < in fsm)
     // first make a vector of only running fsms
     cout << "Ending fsms: " << endl;
+    for (auto &fsm: fsms)
+        fsm.f_least_squares(true);
     vector<Fsm> running_fsms, non_running_fsms;
     partition_copy(
             fsms.begin(),
@@ -167,24 +172,31 @@ void Handler::end(bool at_scan_end) {
             });
     // then least squares
     cout << "running fsms: " << running_fsms.size() << endl;
-    for (auto &fsm: running_fsms)
-        fsm.f_least_squares(true);
+
 
     // find fsm that has most points inside
     if (!running_fsms.empty()) {
         vector<Fsm>::const_iterator min_it = running_fsms.end();
-        if (!at_scan_end)
-            min_it = unique_max(running_fsms,
-                                [](const Fsm &f1, const Fsm &f2) {
-                                    return f1._a._data_vector.size() < f2._a._data_vector.size();
-                                },
-                                [](const Fsm &f1, const Fsm &f2) {
-                                    return f1._a._data_vector.size() == f2._a._data_vector.size();
-                                });
-        if (at_scan_end || min_it == running_fsms.end())
+        if (!at_scan_end) {
+            auto most_points_its = all_max_elements(running_fsms,
+                                                    [](const Fsm &f1, const Fsm &f2) {
+                                                        return f1._a._data_vector.size() < f2._a._data_vector.size();
+                                                    });
+            if (most_points_its.size() > 1)
+                min_it = *min_element(most_points_its.begin(), most_points_its.end(),
+                                      [](const auto &f1, const auto &f2) {
+                                          return f1->ekf.mahalanobis(f1->_a) <
+                                                 f2->ekf.mahalanobis(f2->_a);
+                                      });
+            else min_it = most_points_its.back();
+        }
+
+        if (at_scan_end)
             min_it = min_element(running_fsms.begin(), running_fsms.end(),
                                  [](const Fsm &f1, const Fsm &f2) {
-                                     return f1.ekf._mahalanobis < f2.ekf._mahalanobis;
+                                     // TODO: move maha fun to FSM
+                                     return f1.ekf.mahalanobis(f1._a) <
+                                            f2.ekf.mahalanobis(f2._a);
                                  });
         if (min_it != running_fsms.end())
             map.add_entity(min_it->e, min_it->_a);

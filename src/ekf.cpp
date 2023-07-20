@@ -40,3 +40,11 @@ bool Ekf::update(const Data &d, const bool is_strict) {
     _e._E = _e._E + _e.m->_Q_s;
     return false; // no bp or aberrant measure
 }
+
+double Ekf::mahalanobis(const Aggregate &a) const {
+    double ans = 0;
+    for (const auto &d: a._data_vector)
+        ans += _e.mahalanobis(d);
+    ans /= a._data_vector.size();
+    return ans;
+}

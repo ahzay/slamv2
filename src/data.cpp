@@ -31,11 +31,8 @@ void Data::change_referential(Vector3d new_pose) {
 
 void Data::normalize() {
     double angle = std::fmod(_measurement(1), 2.0 * M_PI);
-    if (angle < -M_PI) {
+    if (angle < 0)
         angle += 2.0 * M_PI;
-    } else if (angle >= M_PI) {
-        angle -= 2.0 * M_PI;
-    }
     _measurement(1) = angle;
 }
 

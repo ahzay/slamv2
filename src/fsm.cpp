@@ -54,10 +54,10 @@ void Fsm::f_strict() {
     _a.push_back(_data);
 }
 
-void Fsm::f_least_squares(const bool is_scan_end) {
+void Fsm::f_least_squares(const bool is_fsm_end) {
     // here we LS, DOP and reset EKF
     e.m->ls(e, _a);
-    if (!is_scan_end)
+    if (!is_fsm_end)
         if (ekf.update(_data, true)) {
             cout << "FSM CLOSING!!!!" << endl;
             state = s_fsm_close; // goto close next, what to do with data

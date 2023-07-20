@@ -23,6 +23,7 @@ atan2(VectorXd y, VectorXd x);
 
 int
 sgn(double val);
+double angle_diff(double angle1, double angle2);
 
 template<typename Container, typename Compare, typename EqualTo>
 typename Container::const_iterator
@@ -53,6 +54,24 @@ unique_max(const Container &container, Compare comp, EqualTo eq) {
         return container.end();
     }
 }
+
+template<typename Container, typename Compare>
+std::vector<typename Container::const_iterator>
+all_max_elements(const Container &container, Compare comp) {
+    auto maxIt = std::max_element(container.begin(), container.end(), comp);
+    std::vector<typename Container::const_iterator> maxIts;
+
+    if (maxIt != container.end()) {
+        for (auto it = container.begin(); it != container.end(); ++it) {
+            if (!comp(*it, *maxIt) && !comp(*maxIt, *it)) { // equal values
+                maxIts.push_back(it);
+            }
+        }
+    }
+    return maxIts;
+}
+
+
 enum State {
     s_begin,      // 0
     s_continuous, // 1

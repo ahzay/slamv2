@@ -18,7 +18,7 @@ public:
 
     void f_strict();
 
-    void f_least_squares(const bool is_scan_end);
+    void f_least_squares(const bool is_fsm_end);
 
     State process_measurement(Data &data);
 

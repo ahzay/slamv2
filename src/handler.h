@@ -36,6 +36,7 @@ public:
     const deque<Model *> _models; // permanent
     Data _data;
     unsigned short n = 0;
+    int adjusted_init_npoints;
     State state = s_begin;
     EntityMap map;
     Scan ps; // preprocessed scan

@@ -7,7 +7,7 @@
 
 #include "aggregate.h"
 #include "cmdlineoptions.h"
-
+#include "tools.h"
 class Scan : public Aggregate {
 public:
     explicit Scan(CmdLineOptions options);

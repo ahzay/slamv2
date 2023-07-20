@@ -10,7 +10,15 @@ sgn(double val) {
     return (double(0) < val) - (val < double(0));
 }
 
-
+double angle_diff(double angle1, double angle2) {
+    const double pi = M_PI;
+    const double twoPi = 2.0 * pi;
+    double diff = fmod(abs(angle1 - angle2), twoPi);
+    if (diff > pi) {
+        diff = twoPi - diff;
+    }
+    return diff;
+}
 
 
 VectorXd

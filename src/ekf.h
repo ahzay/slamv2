@@ -7,12 +7,13 @@
 
 #include "entity.h"
 #include "data.h"
-
 class Ekf {
 public:
     Ekf(const Entity &e);
 
     bool update(const Data &d, bool is_strict);
+
+    double mahalanobis(const Aggregate &a) const;
 
     Entity _e;
     // attributes
