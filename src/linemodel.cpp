@@ -117,7 +117,7 @@ void LineModel::ap_ls(Entity &e, const Aggregate &a) const {
     }
     // solve
     ceres::Solver::Options options;
-    options.num_threads = 16;
+    options.num_threads = _options.ncores;
     options.minimizer_progress_to_stdout = false;
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower

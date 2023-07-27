@@ -51,24 +51,18 @@ void Handler::preprocess_scan(Scan &scan) {
         }
     } while (prev_size != buff._data_vector.size());
     ps.push_back(buff);
-    /*for (auto &d: uua._data_vector) {
-        if (map.associate_data(d)) {
-            map.add_augment(d);
-            aa.push_back(d);
-            d.life = 0;
-        } else {
-            ps.push_back(d);
+    // for debugging association
+    int xmin = -6, xmax = 6, ymin = -11, ymax = 11;
+    double step = 0.25;
+    Data dbuf(Vector2d(), scan._pose, 1);
+    for (double i = xmin; i <= xmax; i += step)
+        for (double j = ymin; j <= ymax; j += step) {
+            dbuf.set_xy(Vector2d(i, j));
+            if (map.associate_data(dbuf))
+                v->add_data(dbuf, "purple");
         }
-    }
 
-    for (auto &d: scan._data_vector) {
-        if (map.associate_data(d)) {
-            map.add_augment(d);
-            aa.push_back(d);
-        } else {
-            ps.push_back(d);
-        }
-    }*/
+    //
     uua.clear();
     ps.reorder();
     v->add_aggregate(aa, "green");

@@ -15,6 +15,8 @@ class Data {
 public:
     Data(Vector2d measurement, Vector3d pose,int longevity);
 
+    void set_xy(Vector2d xy);
+
     Vector2d get_xy() const;
 
     void change_referential(Vector3d new_pose);

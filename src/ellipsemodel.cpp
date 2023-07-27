@@ -161,7 +161,7 @@ void EllipseModel::ls(Entity &e, const Aggregate &a) const {
             problem[i].SetParameterLowerBound(pa[i], 1, p0[10]);
     }
     ceres::Solver::Options options;
-    options.num_threads = 16;
+    options.num_threads = _options.ncores;
     options.minimizer_progress_to_stdout = false;
     options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
@@ -290,7 +290,7 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     problem.SetParameterUpperBound(n_p, 3, 30);   // a
     problem.SetParameterUpperBound(n_p, 4, 30);   // b
     problem.SetParameterUpperBound(n_p, 5, 1.7);*/  // eps
-    for (int j = 0; j < _parameter_count - 1; j++) {
+    for (int j = 2; j < _parameter_count - 1; j++) { // we skip x,y and eps
         problem.SetParameterLowerBound(n_p, j, _parameter_mins[j]);
         problem.SetParameterUpperBound(n_p, j, _parameter_maxs[j]);
     }
@@ -302,17 +302,17 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     // TODO: change to N
     if (x.size() > _options.init_npoints) {
         if (a._pose[0] - x.mean() > 0) // robot on right of shape
-            problem.SetParameterUpperBound(n_p, 0, sqrt(x.mean())); // x
+            problem.SetParameterUpperBound(n_p, 0, x.mean()/2 + a._pose[0]/2); // x
         else
-            problem.SetParameterLowerBound(n_p, 0, sqrt(x.mean()));
+            problem.SetParameterLowerBound(n_p, 0, x.mean()/2 + a._pose[0]/2);
         if (a._pose[1] - y.mean() > 0)                          // robot above shape
-            problem.SetParameterUpperBound(n_p, 1, sqrt(y.mean())); // y
+            problem.SetParameterUpperBound(n_p, 1, y.mean()/2 + a._pose[1]/2); // y
         else
-            problem.SetParameterLowerBound(n_p, 1, sqrt(y.mean()));
+            problem.SetParameterLowerBound(n_p, 1, y.mean()/2 + a._pose[1]/2);
     }
     // solve
     ceres::Solver::Options options;
-    options.num_threads = 16;
+    options.num_threads = _options.ncores;
     options.minimizer_progress_to_stdout = false;
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
