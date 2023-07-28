@@ -46,10 +46,17 @@ bool EntityMap::associate_data(Data &d) {
     return false;
 }
 
-void EntityMap::add_augment(const Data &data) {
+/*void EntityMap::add_augment(const Data &data) {
     //if (data._e == nullptr) // safety (can be removed)
     //    cout << "tried to augment with non-associated data !!!!" << endl;
     for (auto &iekf: iekfs) iekf.add(data);
+}*/
+void EntityMap::add_augment(const Data &data) {
+    if (data._e)
+        if (data._e->updateLeft) {
+            data._e->augmented_last_scan = true;
+            data._e->_a->push_back(data);
+        }
 }
 
 void EntityMap::add_entity(const Entity &e, const Aggregate &a) {
@@ -63,10 +70,14 @@ void EntityMap::add_entity(const Entity &e, const Aggregate &a) {
     }
 }
 
-void EntityMap::run_augment() {
+/*void EntityMap::run_augment() {
     for (auto &iekf: iekfs)
         if (!iekf.a._data_vector.empty())
             iekf.update();
+}*/
+void EntityMap::run_augment() {
+    for (auto &e: entities)
+        e.update();
 }
 
 EntityMap::EntityMap() = default;

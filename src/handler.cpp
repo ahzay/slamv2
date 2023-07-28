@@ -52,7 +52,7 @@ void Handler::preprocess_scan(Scan &scan) {
     } while (prev_size != buff._data_vector.size());
     ps.push_back(buff);
     // for debugging association
-    int xmin = -6, xmax = 6, ymin = -11, ymax = 11;
+    /*int xmin = -6, xmax = 6, ymin = -11, ymax = 11;
     double step = 0.25;
     Data dbuf(Vector2d(), scan._pose, 1);
     for (double i = xmin; i <= xmax; i += step)
@@ -60,8 +60,7 @@ void Handler::preprocess_scan(Scan &scan) {
             dbuf.set_xy(Vector2d(i, j));
             if (map.associate_data(dbuf))
                 v->add_data(dbuf, "purple");
-        }
-
+        }*/
     //
     uua.clear();
     ps.reorder();
@@ -70,6 +69,10 @@ void Handler::preprocess_scan(Scan &scan) {
     v->add_data(ps._data_vector.back(), "orange");
     v->add_data(ps._data_vector.front(), "yellow");
     map.run_augment();
+    //
+    /*for(auto const e:map.entities)
+        v->add_aggregate(*e._a,"purple");*/
+    //
     cout << "done preprocessing!" << endl;
 }
 
@@ -102,7 +105,7 @@ State Handler::process_measurement(Data &data) {
 void Handler::f_begin() {
     // reset
     //v->add_data(_data, "purple");
-    adjusted_init_npoints = o.init_npoints / _data._measurement(0) * 3;
+    adjusted_init_npoints = o.init_npoints / _data._measurement(0) * o.init_npoints_multiplier;
     cout << "adjusted init points: " << adjusted_init_npoints << endl;
     ua.clear();
     ua.push_back(_data);
@@ -172,7 +175,7 @@ void Handler::end(bool at_scan_end) {
     if (!running_fsms.empty()) {
         vector<Fsm>::const_iterator min_it = running_fsms.end();
         if (!at_scan_end) {
-            auto most_points_its = all_max_elements(running_fsms,
+            /*auto most_points_its = all_max_elements(running_fsms,
                                                     [](const Fsm &f1, const Fsm &f2) {
                                                         return f1._a._data_vector.size() < f2._a._data_vector.size();
                                                     });
@@ -182,7 +185,12 @@ void Handler::end(bool at_scan_end) {
                                           return f1->ekf.mahalanobis(f1->_a) <
                                                  f2->ekf.mahalanobis(f2->_a);
                                       });
-            else min_it = most_points_its.back();
+            else min_it = most_points_its.back();*/
+            min_it = min_element(running_fsms.begin(), running_fsms.end(),
+                                 [](const auto &f1, const auto &f2) {
+                                     return f1.ekf.mahalanobis(f1._a) <
+                                            f2.ekf.mahalanobis(f2._a);
+                                 });
         }
 
         if (at_scan_end)

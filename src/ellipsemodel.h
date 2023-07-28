@@ -22,7 +22,7 @@ public:
 
     VectorXd init(const Aggregate &a) const;
 
-    void ls(Entity &e, const Aggregate &a) const override;
+    void ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized) const override;
 
     void ap_ls(Entity &e, const Aggregate &a) const override;
 

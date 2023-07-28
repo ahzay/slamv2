@@ -29,6 +29,8 @@ public:
 
     void reorder();
 
+    //void sort_shortest_path();
+
     void push_back(const Data &data);
 
     void push_back(const Aggregate &a);

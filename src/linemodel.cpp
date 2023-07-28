@@ -35,7 +35,7 @@ VectorXd LineModel::init(const Aggregate &a) const {
     return Eigen::VectorXd();
 }
 
-void LineModel::ls(Entity &e, const Aggregate &a) const {
+void LineModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized) const {
     Vector<double, 2> p;
     MatrixXd X = a.get_xy_mat();
     MatrixXd b = (X.transpose() * X).inverse() * X.transpose() *
@@ -117,7 +117,7 @@ void LineModel::ap_ls(Entity &e, const Aggregate &a) const {
     }
     // solve
     ceres::Solver::Options options;
-    options.num_threads = _options.ncores;
+    options.num_threads = _options.nthreads;
     options.minimizer_progress_to_stdout = false;
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower

@@ -125,7 +125,7 @@ void Model::ap_dop(Entity &e, const Aggregate &a) const {
         throw std::runtime_error("Non positive semi-definite matrix!");
     }
     // system propagation
-    e._E = e._E + e.m->_Q_a;
+    e._E = e._E + e.m->_Q_a * a._data_vector.size() / _options.init_npoints;
     //e._E *= (1 + _ap_ls_forgetting_factor);
 }
 
