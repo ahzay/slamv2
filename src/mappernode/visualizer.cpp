@@ -24,8 +24,8 @@ Visualizer::Visualizer(int cnt) {
        << endl
        << "set samples 2000" << endl
        << "set isosamples 10000,10000 " << endl
-       << "set xrange [-12:12] " << endl
-       << "set yrange [-21:21] "
+       << "set xrange [-6:6] " << endl
+       << "set yrange [-12:12] "
        << endl
        //<< "set xrange [-5:5] " << endl
        //<< "set yrange [-15:-5] "
@@ -84,7 +84,7 @@ void Visualizer::add_segment(Eigen::VectorXd p, Eigen::VectorXd t) {
     double x_1 = z_1 * cos(t(1));
     double y_1 = z_1 * sin(t(1));
     Eigen::Matrix<double, 2, 2> pts;
-    of << "plot \"-\" w l lt 5 lw 3" << endl
+    of << "plot \"-\" w l lt 5 lw 6" << endl
        << x_0 << " " << y_0 << endl
        << x_1 << " " << y_1 << endl
        << "e" << endl;

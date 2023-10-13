@@ -56,7 +56,7 @@ void Fsm::f_strict() {
 
 void Fsm::f_least_squares(const bool is_fsm_end) {
     // here we LS, DOP and reset EKF
-    e.m->ls(e, _a);
+    e.m->ls(e, _a, 0);
     if (!is_fsm_end)
         if (ekf.update(_data, true)) {
             cout << "FSM CLOSING!!!!" << endl;

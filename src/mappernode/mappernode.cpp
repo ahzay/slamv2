@@ -7,6 +7,7 @@
 int main(int argc, char *argv[]) {
 
     CmdLineOptions options(argc, argv);
+    Eigen::setNbThreads(options.nthreads);
     deque<Scan> scans(options.scan_number, Scan(options));
     for (int i = 0; i < options.scan_number; i++)
         scans[i].read_scan(i);

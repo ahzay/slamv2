@@ -12,6 +12,14 @@ Vector2d Data::get_rotated_measurement() const {
     return Vector2d(_measurement(0), _measurement(1) + _pose(2));
 }
 
+void Data::set_xy(Vector2d xy) { // make sure pose is set accurately first
+    auto dx = xy(0) - _pose(0);
+    auto dy = xy(1) - _pose(1);
+    _measurement(0) = sqrt(dx * dx + dy * dy);
+    auto an = atan2(dy, dx);
+    _measurement(1) = an - _pose(2);
+}
+
 Vector2d Data::get_xy() const {
     auto dan = get_rotated_measurement();
     return {dan(0) * cos(dan(1)) + _pose(0),

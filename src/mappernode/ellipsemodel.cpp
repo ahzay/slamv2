@@ -78,7 +78,7 @@ VectorXd EllipseModel::init(const Aggregate &a) const {
     p[3] = a0;
     p[4] = b0;
     //p[5] = _parameter_maxs[5];            // CHANGED
-    p[5] = 1;
+    p[5] = (_parameter_mins[5] + _parameter_maxs[5]) / 2;
     p[8] = th0 + M_PI / 2; // alt th0
     p[9] = x0;
     p[10] = y0; // classic x0 and y0
@@ -97,7 +97,7 @@ struct EllipseModel::LossFunction {
         T f1 = ((_x - p[0]) * cos(p[2]) + (_y - p[1]) * sin(p[2])) / p[3];
         T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
         residual[0] = // log(
-                0.1 * pow((p[4]) * (p[3]), 0.5); // penalty on area
+                0.25 * pow((p[4]) * (p[3]), 0.5); // penalty on area
         residual[1] =
                 // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
                 (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),
@@ -113,26 +113,30 @@ private:
     double _y;
 };
 
-void EllipseModel::ls(Entity &e, const Aggregate &a) const {
+void EllipseModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized) const {
+    cout << "starting ellipse ls" << endl;
     const auto xydata = a.get_xy_mat();
     VectorXd xdata = xydata(all, 0);
     VectorXd ydata = xydata(all, 1);
-    auto p0 = init(a);
-    double p0arr[6] = {p0[0], p0[1], p0[2], p0[3], p0[4], p0[5]};
+    VectorXd p0;
+    if (!alreadyInitialized)
+        p0 = init(a);
+    else p0 = e._p;
+    double p0arr[6] = {xdata.mean(), ydata.mean(), p0[2], p0[3], p0[4], p0[5]};
     // theta variation
-    double p1[6] = {p0[0], p0[1], p0[8], p0[3], p0[4], p0[5]};
+    /*double p1[6] = {p0[9], p0[10], p0[8], p0[3], p0[4], p0[5]};
     // eps variation
-    double p2[6] = {p0[0], p0[1], p0[2], p0[3], p0[4], 0.1};
+    double p2[6] = {p0[9], p0[10], p0[2], p0[3], p0[4], 0.1};
     double p3[6] = {p1[0], p1[1], p1[2], p1[3], p1[4], 0.1};
-    double p4[6] = {p0[0], p0[1], p0[2], p0[3], p0[4], 1.9};
-    double p5[6] = {p1[0], p1[1], p1[2], p1[3], p1[4], 1.9};
+    double p4[6] = {p0[9], p0[10], p0[2], p0[3], p0[4], 1.9};
+    double p5[6] = {p1[0], p1[1], p1[2], p1[3], p1[4], 1.9};*/
 
     // double p3[6] = {p1[0], p1[1], p1[8], p1[3], p1[4], p0[5]};
     //
-    const int n = 6;
+    const int n = 1;
     // double *pa[n] = {p8, p2};
     // double *pa[n] = {p0arr, p1, p2, p3};
-    double *pa[n] = {p0arr, p1, p2, p3, p4, p5};
+    double *pa[n] = {p0arr};//, p1, p2, p3, p4, p5};
     //   double *pa[] = {p0.data(), p1, p2, p3};
     // double* pa[] = { p2, p4 };
     //  ceres::Problem *problem = new ceres::Problem[n]; // destructor segfaults
@@ -151,22 +155,29 @@ void EllipseModel::ls(Entity &e, const Aggregate &a) const {
             problem[i].SetParameterUpperBound(pa[i], j, _parameter_maxs[j]);
         }
         // avoids auto-occlusion
-        if (a._pose(0) - p0[9] > 0) // robot on right of shape
-            problem[i].SetParameterUpperBound(pa[i], 0, p0[9]); // x
+        double xoff, yoff;
+        if (abs(xdata.mean() - a._pose[0]) < 1)
+            xoff = xdata.mean() / 2 + a._pose[0] / 2;
+        else xoff = xdata.mean();
+        if (abs(ydata.mean() - a._pose[1]) < 1)
+            yoff = ydata.mean() / 2 + a._pose[1] / 2;
+        else yoff = ydata.mean();
+        if (a._pose(0) - xdata.mean() > 0) // robot on right of shape
+            problem[i].SetParameterUpperBound(pa[i], 0, xoff); // x
         else
-            problem[i].SetParameterLowerBound(pa[i], 0, p0[9]);
-        if (a._pose(1) - p0[10] > 0)                               // robot above shape
-            problem[i].SetParameterUpperBound(pa[i], 1, p0[10]); // y
+            problem[i].SetParameterLowerBound(pa[i], 0, xoff);
+        if (a._pose(1) - ydata.mean() > 0)                               // robot above shape
+            problem[i].SetParameterUpperBound(pa[i], 1, yoff); // y
         else
-            problem[i].SetParameterLowerBound(pa[i], 1, p0[10]);
+            problem[i].SetParameterLowerBound(pa[i], 1, yoff);
     }
     ceres::Solver::Options options;
-    options.num_threads = 16;
+    options.num_threads = _options.nthreads;
     options.minimizer_progress_to_stdout = false;
     options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
     options.initial_trust_region_radius = 1e8;                 // important
-    options.max_num_iterations = 100;
+    options.max_num_iterations = 10;
     ceres::Solver::Summary summary[n];
     for (unsigned i = 0; i < n; i++)
         ceres::Solve(options, &problem[i], &summary[i]);
@@ -177,10 +188,10 @@ void EllipseModel::ls(Entity &e, const Aggregate &a) const {
         cout << pa[i][0] << ", " << pa[i][1] << ", " << pa[i][2] << ", " << pa[i][3]
              << ", " << pa[i][4] << ", " << pa[i][5] << endl;
         // checking that array is finite (not nan or inf)
-        bool arrayIsFinite = 1;
+        bool arrayIsFinite = true;
         for (int k = 0; k < 6; k++)
             if (!isfinite(pa[i][k])) {
-                arrayIsFinite = 0;
+                arrayIsFinite = false;
                 break;
             }
         if (!arrayIsFinite)
@@ -214,8 +225,10 @@ struct EllipseModel::CostFunction {
                  double an,
                  double sigma_d,
                  VectorXd ap_p,
-                 MatrixXd ap_dop)
-            : _ap_d(ap_d), _an(an), _x_p(x_p), _y_p(y_p), _sigma_d(sigma_d), _ap_p(ap_p), _ap_dop(ap_dop) {
+                 MatrixXd ap_dop,
+                 MatrixXd Q_a)
+            : _ap_d(ap_d), _an(an), _x_p(x_p), _y_p(y_p), _sigma_d(sigma_d),
+              _ap_p(ap_p), _ap_dop(ap_dop), Q(Q_a) {
     }
 
     template<typename T>
@@ -242,7 +255,7 @@ struct EllipseModel::CostFunction {
         //   parameter variation constraint
         Eigen::Map<const Eigen::Vector<T, 6>> pv(p);
         Eigen::Vector<T, 6> dp = pv - _ap_p;
-        residual[2] = 50. * abs((dp.transpose() * _ap_dop.inverse() * dp)(0));
+        residual[2] = 30. * abs((dp.transpose() * _ap_dop.inverse() * Q.inverse() * dp)(0));
         // residual[2] *= 100000;
         //   area
         residual[3] = 0.1 * abs(pow((p[4]) * (p[3]), 0.5));
@@ -253,7 +266,7 @@ struct EllipseModel::CostFunction {
 private:
     double _ap_d, _an, _x_p, _y_p, _sigma_d;
     VectorXd _ap_p;
-    MatrixXd _ap_dop;
+    MatrixXd _ap_dop, Q;
 };
 
 void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
@@ -280,7 +293,7 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
         ceres::CostFunction *cost_function =
                 new ceres::AutoDiffCostFunction<CostFunction, 4, 6, 1>(
                         new CostFunction(a._pose(0), a._pose(1), d(i), an(i),
-                                         _dop_sigma, e._p, e._E));
+                                         _dop_sigma, e._p, e._E, _Q_a));
         problem.AddResidualBlock(cost_function, nullptr, n_p, &n_d[i]);
     }
     // bounds
@@ -290,7 +303,7 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     problem.SetParameterUpperBound(n_p, 3, 30);   // a
     problem.SetParameterUpperBound(n_p, 4, 30);   // b
     problem.SetParameterUpperBound(n_p, 5, 1.7);*/  // eps
-    for (int j = 0; j < _parameter_count - 1; j++) {
+    for (int j = 2; j < _parameter_count - 1; j++) { // we skip x,y and eps
         problem.SetParameterLowerBound(n_p, j, _parameter_mins[j]);
         problem.SetParameterUpperBound(n_p, j, _parameter_maxs[j]);
     }
@@ -302,22 +315,27 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     // TODO: change to N
     if (x.size() > _options.init_npoints) {
         if (a._pose[0] - x.mean() > 0) // robot on right of shape
-            problem.SetParameterUpperBound(n_p, 0, sqrt(x.mean())); // x
+            problem.SetParameterUpperBound(n_p, 0, x.mean() / 2 + a._pose[0] / 2); // x
         else
-            problem.SetParameterLowerBound(n_p, 0, sqrt(x.mean()));
+            problem.SetParameterLowerBound(n_p, 0, x.mean() / 2 + a._pose[0] / 2);
         if (a._pose[1] - y.mean() > 0)                          // robot above shape
-            problem.SetParameterUpperBound(n_p, 1, sqrt(y.mean())); // y
+            problem.SetParameterUpperBound(n_p, 1, y.mean() / 2 + a._pose[1] / 2); // y
         else
-            problem.SetParameterLowerBound(n_p, 1, sqrt(y.mean()));
+            problem.SetParameterLowerBound(n_p, 1, y.mean() / 2 + a._pose[1] / 2);
     }
     // solve
     ceres::Solver::Options options;
-    options.num_threads = 16;
+    options.num_threads = _options.nthreads;
     options.minimizer_progress_to_stdout = false;
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
     // options.initial_trust_region_radius = 1e8;                 // important
-    options.max_num_iterations = 5;
+    options.max_num_iterations = 100;
+    // Set stricter stopping criteria for more accurate results
+    options.function_tolerance = 1e-14;    // Default: 1e-6
+    options.gradient_tolerance = 1e-14;   // Default: 1e-10
+    options.parameter_tolerance = 1e-14;   // Default: 1e-8
+
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     // fixes

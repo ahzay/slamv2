@@ -12,10 +12,10 @@ using namespace std;
 class CmdLineOptions {
 public:
     CmdLineOptions(int argc, char *argv[]);
-
+    // TODO: eventually have to migrate these to a json file
     string data_folder;
-    int scan_number, stride, prune, init_npoints, data_longevity,npoints_mult;
-    double angle_tolerance, distance_tolerance, env_multiplier, max_scan_distance,eucledian_tolerance;
+    int scan_number, stride, prune, init_npoints, data_longevity,npoints_mult, nthreads;
+    double angle_tolerance, distance_tolerance, init_npoints_multiplier, max_scan_distance,eucledian_tolerance;
 };
 
 

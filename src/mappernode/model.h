@@ -30,7 +30,7 @@ public:
 
     virtual VectorXd init(const Aggregate &a) const = 0;
 
-    virtual void ls(Entity &e, const Aggregate &a) const = 0;
+    virtual void ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized) const = 0;
 
     // TODO: generalize this and others so not virtual !!!!
     virtual void ap_ls(Entity &e, const Aggregate &a) const = 0;

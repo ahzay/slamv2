@@ -3,6 +3,14 @@
 //
 
 #include "aggregate.h"
+#include <boost/graph/simple_point.hpp>
+#include <boost/graph/metric_tsp_approx.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
+#include <ctime>
+
+using namespace boost;
 
 MatrixX2d Aggregate::get_measurement_mat() const {
     MatrixX2d mat;
@@ -23,7 +31,7 @@ MatrixX2d Aggregate::get_rotated_measurement_mat() const {
 void Aggregate::push_back(const Data &data) {
     _data_vector.push_back(data);
     _data_vector.back().normalize();
-    if (_pose != data._pose)
+    if (!_pose.isApprox(data._pose))
         change_referential(data._pose);
 }
 
@@ -85,7 +93,7 @@ void Aggregate::push_back(const Aggregate &a) {
 }
 
 void Aggregate::reorder() {
-    if(_data_vector.empty()) return;
+    if (_data_vector.empty()) return;
     self_sort();
     auto max_difference_iter = _data_vector.begin();
     double max_difference = (_data_vector.front().get_xy() - _data_vector.back().get_xy()).norm();
@@ -99,5 +107,40 @@ void Aggregate::reorder() {
     }
     rotate(_data_vector.begin(), max_difference_iter, _data_vector.end());
 }
+
+typedef adjacency_matrix<undirectedS, no_property, property<edge_weight_t, double> > Graph;
+typedef graph_traits<Graph>::vertex_descriptor VertexDescriptor;
+
+double euclideanDistance(const Vector2d &p1, const Vector2d &p2) {
+    return sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2));
+}
+
+
+/*void Aggregate::self_sort() {
+    const int numNodes = _data_vector.size();
+
+    Graph g(numNodes);
+    property_map<Graph, edge_weight_t>::type weightMap = get(edge_weight, g);
+
+    // Populate graph with edge weights representing euclidean distances
+    for (int i = 0; i < numNodes; ++i) {
+        for (int j = i + 1; j < numNodes; ++j) {
+            double distance = euclideanDistance(_data_vector[i].get_xy(), _data_vector[j].get_xy());
+            add_edge(i, j, distance, g);
+        }
+    }
+
+    // Compute approximate TSP tour
+    vector<VertexDescriptor> tspTour;
+    metric_tsp_approx_tour(g, back_inserter(tspTour));
+
+    // Reorder dataPoints according to TSP tour
+    vector<Data> orderedData;
+    for (auto v: tspTour) {
+        orderedData.push_back(_data_vector[v]);
+    }
+    _data_vector = orderedData;
+}*/
+
 
 Aggregate::Aggregate() = default;

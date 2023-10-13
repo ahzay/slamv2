@@ -12,6 +12,8 @@ void Iekf::add(const Data &d) {
 }
 
 void Iekf::update() {
-    _e->m->ap_ls(*_e, a);
+    // TODO: make another variable for this ...
+    if (a._data_vector.size() >= _e->m->_options.init_npoints/_e->m->_options.init_npoints_multiplier)
+        _e->m->ap_ls(*_e, a);
 }
 

@@ -41,7 +41,7 @@ void Scan::read_scan(const int n) {
     // first line
     f >> _pose(0) >> cbuf >> _pose(1) >> cbuf >> _pose(2);
     // mult
-    _pose({0, 1}) *= _options.env_multiplier;
+    //_pose({0, 1}) *= _options.init_npoints_multiplier;
     // odom x y z q0 q1 q2 q3
     f >> dbuf >> dbuf >> dbuf >> dbuf >> dbuf >> dbuf >> dbuf;
     // ,rows
@@ -61,7 +61,7 @@ void Scan::read_scan(const int n) {
         double error = (-0.01 + (rand() / (RAND_MAX / 0.02)));
         error = 0;
         d._measurement(0) += error;
-        d._measurement(0) *= _options.env_multiplier;
+        //d._measurement(0) *= _options.init_npoints_multiplier;
     }
     /*
     //  adjust data to emulate null rotation

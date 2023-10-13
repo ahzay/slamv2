@@ -1,7 +1,7 @@
 *.csv
 *.user
 !*.txt
-/src/cmake-build-debug-docker/*
-!/src/cmake-build-debug-docker/scans/
-/src/cmake-build-debug-docker/scans/*
-!/src/cmake-build-debug-docker/scans/*.txt
+/src/cmake-build-*-docker/*
+!/src/cmake-build-*-docker/scans/
+/src/cmake-build-*-docker/scans/*
+!/src/cmake-build-*-docker/scans/*.txt

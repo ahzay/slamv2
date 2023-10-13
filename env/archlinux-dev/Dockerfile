@@ -23,6 +23,6 @@ USER root
 
 # Install the required official repository packages
 RUN pacman -S --noconfirm cmake boost ceres-solver python python-numpy gcc openmp
-RUN pacman -S --noconfirm qtcreator 
+RUN pacman -S --noconfirm qtcreator perf
 
 CMD ["bash"]
