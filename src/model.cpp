@@ -46,6 +46,7 @@ Model::Model(const string &file, const CmdLineOptions &options) : _options(optio
     for (int i = 0; i < _parameter_count; i++)
         f >> _parameter_maxs(i);
     f >> _ap_ls_forgetting_factor;
+    f >> _min_npoints_mult;
     f.close();
     // print
     cout << "model" << endl
@@ -66,7 +67,8 @@ Model::Model(const string &file, const CmdLineOptions &options) : _options(optio
          << _dop_sigma << endl
          << _parameter_mins.transpose() << endl
          << _parameter_maxs.transpose() << endl
-         << _ap_ls_forgetting_factor << endl;
+         << _ap_ls_forgetting_factor << endl
+         << _min_npoints_mult << endl;
 }
 
 void Model::dop(Entity &e, const Aggregate &a) const {
@@ -83,7 +85,7 @@ void Model::dop(Entity &e, const Aggregate &a) const {
     En = En.inverse();
     cout << "En: " << endl << En << endl;
     /*if (!is_psd(En)) {
-        throw std::runtime_error("Non positive semi-definite matrix!");
+        throw std::runtime_error("Non positive semi-definite matrix! in dop");
     }*/
     e._E = En;
 }
@@ -122,10 +124,10 @@ void Model::ap_dop(Entity &e, const Aggregate &a) const {
     cout << "E Eigenvalues after: " << e._E.eigenvalues().transpose() << endl;
     cout << "E: " << endl << e._E.diagonal().transpose() << endl;
     if (!is_psd(e._E)) {
-        throw std::runtime_error("Non positive semi-definite matrix!");
+        throw std::runtime_error("Non positive semi-definite matrix! in ap_dop");
     }
     // system propagation
-    e._E = e._E + e.m->_Q_a * a._data_vector.size() / _options.init_npoints;
+    e._E = e._E + e.m->_Q_a;// * a._data_vector.size();
     //e._E *= (1 + _ap_ls_forgetting_factor);
 }
 

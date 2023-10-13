@@ -9,12 +9,17 @@ bool Scan::check_continuity(Data data) const {
     // TODO: normalize because angles don't mean the same thing at diff distances
     // maybe add eucledian variation test if both other tests pass
     double dist_variation = abs(data._measurement(0) - _data_vector.back()._measurement(0));
-    double angle_variation = angle_diff(data._measurement(1),
-                                        _data_vector.back()._measurement(1));
+    /*dist_variation /= _data_vector.back()._measurement(0);
+    dist_variation *= _options.init_npoints_multiplier;
+    if(dist_variation >abs(data._measurement(0) - _data_vector.back()._measurement(0)))
+        dist_variation = abs(data._measurement(0) - _data_vector.back()._measurement(0));*/
+    double angle_variation = abs(angle_diff(data._measurement(1),
+                                            _data_vector.back()._measurement(1)));
     double eucledian_variation = (data.get_xy() - _data_vector.back().get_xy()).norm();
     bool ans = (angle_variation > _options.angle_tolerance ||
-                dist_variation > _options.distance_tolerance) &&
-               eucledian_variation > _options.eucledian_tolerance;
+                dist_variation > _options.distance_tolerance);
+               //&& eucledian_variation > _options.eucledian_tolerance;
+    cout << "at: " << data.get_xy().transpose() << endl;
     if (ans) {
         cout << "Continuity broken at: " << data.get_xy().transpose() << endl;
         cout << "Dist variation: " << dist_variation << endl

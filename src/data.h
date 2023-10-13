@@ -13,7 +13,9 @@ class Entity;
 
 class Data {
 public:
-    Data(Vector2d measurement, Vector3d pose,int longevity);
+    Data(Vector2d measurement, Vector3d pose, int longevity);
+
+    double distance_to(const Data &o) const;
 
     void set_xy(Vector2d xy);
 

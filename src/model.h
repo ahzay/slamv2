@@ -8,7 +8,7 @@
 #include "aggregate.h"
 #include "tools.h"
 #include "cmdlineoptions.h"
-
+#define SLICE_NUM 30
 class Model {
 public:
     explicit Model(const string &file, const CmdLineOptions &options);
@@ -32,6 +32,7 @@ public:
 
     virtual void ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized) const = 0;
 
+
     // TODO: generalize this and others so not virtual !!!!
     virtual void ap_ls(Entity &e, const Aggregate &a) const = 0;
 
@@ -43,16 +44,19 @@ public:
 
     virtual void augment_post(Entity &e, const Data &d) const = 0;
 
+    virtual void decimate(Entity &e) const = 0;
+
 // private:
     CmdLineOptions _options;
     VectorXd _parameter_mins, _parameter_maxs;
     VectorXi _dfs_parameter_indexes, _dfs_measurement_error_indexes;
     MatrixXd _W_a, _W_s, _Q_a, _Q_s, I;
     double _mahalanobis_strict, _mahalanobis_flex, _dop_sigma,
-            _mahalanobis_aug,_mahalanobis_aug_min; // thresholds
+            _mahalanobis_aug, _mahalanobis_aug_min; // thresholds
     unsigned short _parameter_count, _model_index, _post_attributes_count;
     double _ap_ls_forgetting_factor;
     bool _closed_fs;
+    double _min_npoints_mult;
 
 };
 

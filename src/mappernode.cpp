@@ -3,9 +3,10 @@
 //
 
 #include "mappernode.h"
+#include <chrono>
 
 int main(int argc, char *argv[]) {
-
+    auto start = std::chrono::high_resolution_clock::now();
     CmdLineOptions options(argc, argv);
     Eigen::setNbThreads(options.nthreads);
     deque<Scan> scans(options.scan_number, Scan(options));
@@ -56,6 +57,9 @@ int main(int argc, char *argv[]) {
                 to_string(cnt - 1) + ".png").c_str());
     }
     // render plots
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "Time taken: " << duration.count() << " microseconds" << std::endl;
     //system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");
     return 0;
 }

@@ -17,6 +17,7 @@ bool is_psd(const MatrixXd &A);
 
 double vector_cov(VectorXd x, VectorXd y);
 
+
 VectorXd
 atan2(VectorXd y, VectorXd x);
 

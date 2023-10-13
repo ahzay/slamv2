@@ -36,6 +36,8 @@ State Fsm::process_measurement(Data &data) {
 }
 
 void Fsm::f_flexible() {
+    //state = s_fsm_strict;
+    //f_strict(); // trying with no flex
     if (ekf.update(_data, false))
         state = s_fsm_sink; // goto sink
     else {

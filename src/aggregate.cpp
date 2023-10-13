@@ -48,6 +48,7 @@ void Aggregate::flush() {
     // new flush works with age
     for (auto &d: _data_vector)
         d.life--;
+    // COMMENTED FOR TESTING
     erase_if(_data_vector, [](auto d) { return d.life < 1; });
     //_pose.setConstant(NAN);
 }

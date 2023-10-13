@@ -118,11 +118,19 @@ void EllipseModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitiali
     const auto xydata = a.get_xy_mat();
     VectorXd xdata = xydata(all, 0);
     VectorXd ydata = xydata(all, 1);
-    VectorXd p0;
-    if (!alreadyInitialized)
-        p0 = init(a);
-    else p0 = e._p;
+    VectorXd p0 = init(a);
+    VectorXd p0o;
+    int n;
+    if (alreadyInitialized) {
+        p0o = e._p;
+        n = 2;
+    } else {
+        p0o = p0;
+        n = 1;
+    }
     double p0arr[6] = {xdata.mean(), ydata.mean(), p0[2], p0[3], p0[4], p0[5]};
+    double p0oarr[6] = {xdata.mean(), ydata.mean(), p0o[2], p0o[3], p0o[4], p0o[5]};
+    double *pa[2] = {p0arr, p0oarr};
     // theta variation
     /*double p1[6] = {p0[9], p0[10], p0[8], p0[3], p0[4], p0[5]};
     // eps variation
@@ -133,10 +141,9 @@ void EllipseModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitiali
 
     // double p3[6] = {p1[0], p1[1], p1[8], p1[3], p1[4], p0[5]};
     //
-    const int n = 1;
     // double *pa[n] = {p8, p2};
     // double *pa[n] = {p0arr, p1, p2, p3};
-    double *pa[n] = {p0arr};//, p1, p2, p3, p4, p5};
+    //double *pa[n] = {p0arr};//, p1, p2, p3, p4, p5};
     //   double *pa[] = {p0.data(), p1, p2, p3};
     // double* pa[] = { p2, p4 };
     //  ceres::Problem *problem = new ceres::Problem[n]; // destructor segfaults
@@ -215,7 +222,8 @@ void EllipseModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitiali
     }
     cout << "LS YIELDS: " << ans.transpose() << endl;
     e._p = ans;
-    dop(e, a);
+    if (alreadyInitialized) ap_dop(e, a);
+    else dop(e, a);
 }
 
 struct EllipseModel::CostFunction {
@@ -258,7 +266,7 @@ struct EllipseModel::CostFunction {
         residual[2] = 30. * abs((dp.transpose() * _ap_dop.inverse() * Q.inverse() * dp)(0));
         // residual[2] *= 100000;
         //   area
-        residual[3] = 0.1 * abs(pow((p[4]) * (p[3]), 0.5));
+        residual[3] = abs(pow((p[4]) * (p[3]), 0.5));
         // residual[3] = 0.;
         return true;
     }
@@ -330,7 +338,7 @@ void EllipseModel::ap_ls(Entity &e, const Aggregate &a) const {
     // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
     // options.initial_trust_region_radius = 1e8;                 // important
-    options.max_num_iterations = 100;
+    options.max_num_iterations = 10;
     // Set stricter stopping criteria for more accurate results
     options.function_tolerance = 1e-14;    // Default: 1e-6
     options.gradient_tolerance = 1e-14;   // Default: 1e-10
@@ -400,6 +408,48 @@ double EllipseModel::fss(const VectorXd &p, const VectorXd &pose, const VectorXd
             p(0), p(1), p(2), p(3), p(4), p(5),
             pose(0), pose(1), rotated_measurement(0), rotated_measurement(1),
             0, 0);
+}
+
+void EllipseModel::decimate(Entity &e) const {
+    if (!e._a) return;
+    // we will first get all angles for the points with respect to the center of the ellipse
+    Aggregate newAggregate;
+    auto pxy = e._a->get_xy_mat();
+    VectorXd angles = atan2((pxy.col(1).array() - e._p(1)),
+                            (pxy.col(0).array() - e._p(0))).array() + M_PI;
+    int lastInRangeIdx = 0;
+    Aggregate slices[SLICE_NUM];
+    //double inc = M_PI / 100;
+    for (int i = 0; i < angles.size(); i++) {
+        int index = static_cast<int>(floor(angles(i) / (2 * M_PI / SLICE_NUM))) % SLICE_NUM;
+        slices[index].push_back(e._a->_data_vector[i]);
+    }
+    //for(int i=0;i<SLICE_NUM;i++)
+    //    cout<<"SLICE "<<i<<" has "<< slices[i]._data_vector.size()<<" datas"<<endl;
+
+    // random sampling
+    // samples per slice
+    random_device rd;
+    mt19937 gen(rd());
+    for (auto &slice: slices) {
+        uniform_int_distribution<> distrib(0, slice._data_vector.size() - 1);
+        int N = min(3, (int) slice._data_vector.size()); // samples per slice
+        // Generate a vector of indices
+        vector<int> indices(slice._data_vector.size());
+        iota(indices.begin(), indices.end(), 0);
+        shuffle(indices.begin(), indices.end(), gen);
+        for (int k = 0; k < N; k++)
+            newAggregate.push_back(slice._data_vector[k]);
+    }
+    /*for (double b = 0; b < 2 * M_PI; b += inc) {
+        while (angles(lastInRangeIdx) < b + inc &&
+               angles(lastInRangeIdx) >= b &&
+               lastInRangeIdx < angles.size() - 1)
+            lastInRangeIdx++;
+        newAggregate.push_back(e._a->_data_vector[lastInRangeIdx]);
+    }*/
+    e._a->clear();
+    e._a->push_back(newAggregate);
 }
 
 template<typename T>

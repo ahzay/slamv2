@@ -6,7 +6,7 @@
 #define MAPPERNODE_ENTITY_H
 
 #include "model.h"
-
+#include <random>
 class Entity {
 public:
     Entity(Model *model, const VectorXd &p, const MatrixXd &E);

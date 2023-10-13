@@ -44,3 +44,7 @@ void Data::normalize() {
     _measurement(1) = angle;
 }
 
+double Data::distance_to(const Data &o) const {
+    return (get_xy() - o.get_xy()).norm();
+}
+

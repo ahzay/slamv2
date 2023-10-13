@@ -34,6 +34,8 @@ public:
 
     void augment_post(Entity &e, const Data &d) const override;
 
+    void decimate(Entity &e) const override;
+
     template<typename T>
     T ft(T r, T a, T xp, T yp, T d, T an, T mud, T muan) const;
 

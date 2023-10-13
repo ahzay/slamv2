@@ -11,13 +11,8 @@ sgn(double val) {
 }
 
 double angle_diff(double angle1, double angle2) {
-    const double pi = M_PI;
-    const double twoPi = 2.0 * pi;
-    double diff = fmod(abs(angle1 - angle2), twoPi);
-    if (diff > pi) {
-        diff = twoPi - diff;
-    }
-    return diff;
+    double diff = fmod(angle1 - angle2 + M_PI, 2.0 * M_PI) - M_PI;
+    return diff >= -M_PI ? diff : diff + 2.0 * M_PI;
 }
 
 

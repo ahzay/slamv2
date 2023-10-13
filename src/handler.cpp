@@ -15,6 +15,9 @@ Handler::Handler(const deque<Model *> &models,
 void Handler::preprocess_scan(Scan &scan) {
     cout << "start preprocessing" << endl;
     // for speedup
+    cout << "decimating !" << endl;
+    for (auto &e: map.entities)
+        e.m->decimate(e);
     if (uua._data_vector.size() > o.init_npoints * o.npoints_mult) {
         auto tmp = Scan(o);
         mt19937 gen(random_device{}());
@@ -68,6 +71,8 @@ void Handler::preprocess_scan(Scan &scan) {
     v->add_aggregate(ps, "red");
     v->add_data(ps._data_vector.back(), "orange");
     v->add_data(ps._data_vector.front(), "yellow");
+    /*for(const auto &e:map.entities)
+        v->add_aggregate(*e._a,"orange");*/
     map.run_augment();
     //
     /*for(auto const e:map.entities)
@@ -106,6 +111,8 @@ void Handler::f_begin() {
     // reset
     //v->add_data(_data, "purple");
     adjusted_init_npoints = o.init_npoints / _data._measurement(0) * o.init_npoints_multiplier;
+    if (adjusted_init_npoints < 25)
+        adjusted_init_npoints = 25;
     cout << "adjusted init points: " << adjusted_init_npoints << endl;
     ua.clear();
     ua.push_back(_data);
@@ -117,6 +124,7 @@ void Handler::f_begin() {
 void Handler::f_continuous() {
     if (ua.check_continuity(_data)) {
         cout << "not continuous!" << endl;
+        if(n < adjusted_init_npoints -1 )
         uua.push_back(ua);
         state = s_begin;
         f_begin();
@@ -217,7 +225,9 @@ void Handler::end(bool at_scan_end) {
         ps.clear();
         uua.flush();
         cout << "Force ended scan with entities: " << endl;
-        for (const auto &e: map.entities)
+        for (auto &e: map.entities) {
             e.print();
+
+        }
     } else f_begin();
 }

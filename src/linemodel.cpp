@@ -36,6 +36,7 @@ VectorXd LineModel::init(const Aggregate &a) const {
 }
 
 void LineModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized) const {
+    cout << "starting line ls" << endl;
     Vector<double, 2> p;
     MatrixXd X = a.get_xy_mat();
     MatrixXd b = (X.transpose() * X).inverse() * X.transpose() *
@@ -44,7 +45,7 @@ void LineModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitialized
     double aa = atan2(b(1) * r, b(0) * r);
     VectorXd angles = atan2(X.col(1), X.col(0));
     p << r, aa; //, angles.minCoeff(), angles.maxCoeff();
-    // cout << p.transpose() << endl;
+    cout << "LS YIELDS: " << p.transpose() << endl;
     e._p = p;
     dop(e, a);
 }
@@ -227,6 +228,52 @@ void LineModel::augment_post(Entity &e, const Data &d) const {
 double LineModel::fss(const VectorXd &p, const VectorXd &pose, const VectorXd &rotated_measurement) const {
     return ft<double>(p(0), p(1), pose(0), pose(1), rotated_measurement(0),
                       rotated_measurement(1), 0, 0);
+}
+
+void LineModel::decimate(Entity &e) const {
+    if (!e._a) return;
+    auto xy = e._a->get_xy_mat();
+    auto x = xy.col(0);
+    auto y = xy.col(1);
+    Aggregate newAggregate;
+    // project data
+    auto x_p =
+            x.array() * pow(sin(e._p(1)), 2) -
+            y.array() * sin(e._p(1)) * cos(e._p(1)) + e._p(0) * cos(e._p(1));
+    auto y_p =
+            y.array() * pow(cos(e._p(1)), 2) -
+            x.array() * sin(e._p(1)) * cos(e._p(1)) + e._p(0) * sin(e._p(1));
+    double z0_d = e._p(0) / cos(abs(angle_diff(e._p(1), e._t(0))));
+    double z1_d = e._p(0) / cos(abs(angle_diff(e._p(1), e._t(1))));
+    Vector2d z0 = Vector2d(z0_d * cos(e._t(0)), z0_d * sin(e._t(0)));
+    Vector2d z1 = Vector2d(z1_d * cos(e._t(1)), z1_d * sin(e._t(1)));
+
+    double length = (z0 - z1).norm();
+    double slice_length = length / SLICE_NUM;
+    Aggregate slices[SLICE_NUM];
+    for (int i = 0; i < x.size(); i++) {
+        double t = ((x_p(i) - z0(0)) * (z1(0) - z0(0)) +
+                    (y_p(i) - z0(1)) * (z1(1) - z0(1))) / (length * length);
+        t = std::clamp(t, 0.0, 1.0);
+        int slice_index = std::floor(t * SLICE_NUM);
+        if (slice_index >= SLICE_NUM) slice_index = SLICE_NUM - 1;
+        slices[slice_index].push_back(e._a->_data_vector[i]);
+    }
+    random_device rd;
+    mt19937 gen(rd());
+    for (auto &slice: slices) {
+        uniform_int_distribution<> distrib(0, slice._data_vector.size() - 1);
+        int N = min(3, (int) slice._data_vector.size()); // samples per slice
+        // Generate a vector of indices
+        vector<int> indices(slice._data_vector.size());
+        iota(indices.begin(), indices.end(), 0);
+        shuffle(indices.begin(), indices.end(), gen);
+        for (int k = 0; k < N; k++)
+            newAggregate.push_back(slice._data_vector[k]);
+    }
+    e._a->clear();
+    e._a->push_back(newAggregate);
+
 }
 
 template<typename T>
