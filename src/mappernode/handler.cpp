@@ -71,10 +71,10 @@ void Handler::preprocess_scan(Scan &scan) {
     }*/
     uua.clear();
     ps.reorder();
-    v->add_aggregate(aa, "green");
+    //v->add_aggregate(aa, "green");
     v->add_aggregate(ps, "red");
-    v->add_data(ps._data_vector.back(), "orange");
-    v->add_data(ps._data_vector.front(), "yellow");
+    //v->add_data(ps._data_vector.back(), "orange");
+    //v->add_data(ps._data_vector.front(), "yellow");
     map.run_augment();
     cout << "done preprocessing!" << endl;
 }

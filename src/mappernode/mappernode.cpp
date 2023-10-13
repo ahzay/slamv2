@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     e_copy._parameter_mins[5] = 0.1;
     e_copy._parameter_maxs[5] = 1.9;
     models.push_back(new EllipseModel(e_copy));
-    models.push_back(line_model);
+    //models.push_back(line_model);
     Handler h(models, options);
     int cnt = 0;
     system("rm *png *gpt");
@@ -48,11 +48,26 @@ int main(int argc, char *argv[]) {
         h.process_scan(); // also ends it inside
         for (const auto &e: h.map.entities)
             if (e.m->_parameter_count == 6)
-                v.add_ellipse(e._p);
+                v.add_ellipse(e._p, "green");
             else v.add_segment(e._p, e._t);
+        // add ground truth (for sim)
+        ifstream ifs("ground_truth.txt");
+        Vector<double, 6> e;
+        if (ifs.is_open()) {
+            for (int l = 0; l < 6; l++)
+                ifs >> e(l);
+            v.add_ellipse(e, "black");
+        }
+        // also write out the results
+        for (const auto &e: h.map.entities)
+            if (e.m->_parameter_count == 6) {
+                ofstream ofs("ground_estimate.txt");
+                ofs << e._p.transpose();
+            }
+        //
         v.save();
-        system(("gnuplot " + to_string(cnt - 1) + ".gpt > " +
-                to_string(cnt - 1) + ".png").c_str());
+        //system(("gnuplot " + to_string(cnt - 1) + ".gpt > " +
+        //        to_string(cnt - 1) + ".png").c_str());
     }
     // render plots
     //system("parallel -j 24 gnuplot {} \">\" {.}.png ::: *.gpt");

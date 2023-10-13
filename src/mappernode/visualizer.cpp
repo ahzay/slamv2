@@ -62,14 +62,16 @@ void Visualizer::add_points(Eigen::Matrix<double, Eigen::Dynamic, 2> pts,
     // of << "set border\n set xtics\n set ytics\n";
 }
 
-void Visualizer::add_ellipse(Eigen::VectorXd p) {
+void Visualizer::add_ellipse(Eigen::VectorXd p, const std::string &color) {
     of << "xc=" << p(0) << endl
        << "yc=" << p(1) << endl
        << "th=" << p(2) << endl
        << "a=" << p(3) << endl
        << "b=" << p(4) << endl
        << "e=" << p(5) << endl
-       << "plot se_x(t), se_y(t) with l ls 7 lw 3 lc rgb \"green\" "
+       << "plot se_x(t), se_y(t) with l ls 7 lw 3 lc rgb \"";
+    of<<color;
+    of<<"\" "
           "notitle"
        << endl;
 }

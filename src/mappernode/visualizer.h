@@ -22,7 +22,7 @@ public:
 
     void add_aggregate(const Aggregate &a, const string &color);
 
-    void add_ellipse(Eigen::VectorXd p);
+    void add_ellipse(Eigen::VectorXd p, const std::string &color);
 
     void add_segment(Eigen::VectorXd p, Eigen::VectorXd t);
 

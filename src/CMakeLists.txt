@@ -6,19 +6,25 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS} /usr/lib/python3.10/site-packages/numpy/core/include)
 
-add_executable(mappernode mappernode.cpp mappernode.h
-        model.cpp model.h
-        data.cpp data.h
-        aggregate.cpp aggregate.h
-        ellipsemodel.cpp ellipsemodel.h
-        entity.cpp entity.h
-        tools.cpp tools.h
-        scan.cpp scan.h
-        cmdlineoptions.cpp cmdlineoptions.h
-        ekf.cpp ekf.h iekf.cpp iekf.h
-        fsm.cpp fsm.h
-        entitymap.cpp entitymap.h
-        handler.cpp handler.h visualizer.cpp visualizer.h linemodel.cpp linemodel.h)
+add_executable(mc-simulator mc-simulator/mc-simulator.cpp
+        mc-simulator/cmdlineoptions.cpp
+        mc-simulator/cmdlineoptions.h
+        mc-simulator/simulator.cpp
+        mc-simulator/simulator.h)
+add_executable(mappernode mappernode/mappernode.cpp mappernode/mappernode.h
+        mappernode/model.cpp mappernode/model.h
+        mappernode/data.cpp mappernode/data.h
+        mappernode/aggregate.cpp mappernode/aggregate.h
+        mappernode/ellipsemodel.cpp mappernode/ellipsemodel.h
+        mappernode/entity.cpp mappernode/entity.h
+        mappernode/tools.cpp mappernode/tools.h
+        mappernode/scan.cpp mappernode/scan.h
+        mappernode/cmdlineoptions.cpp mappernode/cmdlineoptions.h
+        mappernode/ekf.cpp mappernode/ekf.h mappernode/iekf.cpp mappernode/iekf.h
+        mappernode/fsm.cpp mappernode/fsm.h
+        mappernode/entitymap.cpp mappernode/entitymap.h
+        mappernode/handler.cpp mappernode/handler.h mappernode/visualizer.cpp mappernode/visualizer.h
+        mappernode/linemodel.cpp mappernode/linemodel.h)
 
 # external libs
 # find_package(FastAD CONFIG REQUIRED)
@@ -59,3 +65,30 @@ target_link_libraries(mappernode
         Python3::Python
         Python3::Module
         )
+target_include_directories(mc-simulator
+        PRIVATE
+        ${CERES_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
+        $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(mc-simulator
+        PRIVATE
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${CERES_LIBRARIES}
+)
+add_executable(evaluator evaluator/evaluator.cpp)
+target_include_directories(evaluator
+        PRIVATE
+        ${CERES_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
+        $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(evaluator
+        PRIVATE
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${CERES_LIBRARIES}
+)
