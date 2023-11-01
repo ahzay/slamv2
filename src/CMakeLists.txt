@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS} /usr/lib/python3.10/site-packages/numpy/core/include)
 
+
+add_executable(mc-segm-simulator mc-segm-simulator/mc-segm-simulator.cpp
+        mc-segm-simulator/cmdlineoptions.cpp
+        mc-segm-simulator/cmdlineoptions.h
+        mc-segm-simulator/simulator.cpp
+        mc-segm-simulator/simulator.h)
 add_executable(mc-simulator mc-simulator/mc-simulator.cpp
         mc-simulator/cmdlineoptions.cpp
         mc-simulator/cmdlineoptions.h
@@ -49,6 +55,18 @@ install(
         EXPORT install_targets
 )
 
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(mc-segm-simulator INTERFACE
+            OpenMP::OpenMP_CXX
+    )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ")
+endif ()
+install(
+        TARGETS mc-segm-simulator
+        EXPORT install_targets
+)
+
+
 target_include_directories(mappernode
         PRIVATE
         ${CERES_INCLUDE_DIRS}
@@ -71,6 +89,12 @@ target_include_directories(mc-simulator
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
         $<INSTALL_INTERFACE:include>
 )
+target_include_directories(mc-segm-simulator
+        PRIVATE
+        ${CERES_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
+        $<INSTALL_INTERFACE:include>
+)
 
 target_link_libraries(mc-simulator
         PRIVATE
@@ -78,7 +102,20 @@ target_link_libraries(mc-simulator
         ${Boost_SYSTEM_LIBRARY}
         ${CERES_LIBRARIES}
 )
+target_link_libraries(mc-segm-simulator
+        PRIVATE
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${CERES_LIBRARIES}
+)
 add_executable(evaluator evaluator/evaluator.cpp)
+add_executable(segm-evaluator segm-evaluator/segm-evaluator.cpp)
+target_include_directories(segm-evaluator
+        PRIVATE
+        ${CERES_INCLUDE_DIRS}
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}
+        $<INSTALL_INTERFACE:include>
+)
 target_include_directories(evaluator
         PRIVATE
         ${CERES_INCLUDE_DIRS}
@@ -86,6 +123,12 @@ target_include_directories(evaluator
         $<INSTALL_INTERFACE:include>
 )
 
+target_link_libraries(segm-evaluator
+        PRIVATE
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${CERES_LIBRARIES}
+)
 target_link_libraries(evaluator
         PRIVATE
         ${Boost_FILESYSTEM_LIBRARY}

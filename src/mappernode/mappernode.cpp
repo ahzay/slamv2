@@ -54,11 +54,16 @@ int main(int argc, char *argv[]) {
             else v.add_segment(e._p, e._t);
         // add ground truth (for sim)
         ifstream ifs("ground_truth.txt");
-        Vector<double, 6> e;
+        int num_ellipses;
         if (ifs.is_open()) {
-            for (int l = 0; l < 6; l++)
-                ifs >> e(l);
-            v.add_ellipse(e, "black");
+            Vector<double, 6> e;
+            ifs >> num_ellipses;  // Read the number of ellipses from the first line
+            for (int i = 0; i < num_ellipses; ++i) {
+                for (int l = 0; l < 6; l++) {
+                    ifs >> e(l);  // Read ellipse parameters
+                }
+                v.add_ellipse(e, "black");  // Add ellipse
+            }
         }
         // also write out the results
         for (const auto &e: h.map.entities)
