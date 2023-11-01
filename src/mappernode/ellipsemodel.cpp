@@ -96,12 +96,13 @@ struct EllipseModel::LossFunction {
     bool operator()(const T *const p, T *residual) const {
         T f1 = ((_x - p[0]) * cos(p[2]) + (_y - p[1]) * sin(p[2])) / p[3];
         T f2 = ((_x - p[0]) * sin(p[2]) - (_y - p[1]) * cos(p[2])) / p[4];
-        residual[0] = // log(
-                0.25 * pow((p[4]) * (p[3]), 0.5); // penalty on area
+        residual[0] = 0. *// log(
+                      pow((p[4]) * (p[3]), 0.5); // penalty on area (THIS WORKS HORRIBLE)
         residual[1] =
                 // exp(abs(p[5] - 1.0)) * // penalise eps, pow 1 = no penalty
+                pow((p[4]) * (p[3]), 1.0) *
                 (pow(pow(pow(f1, 2.0), (1.0 / p[5])) + pow(pow(f2, 2.0), (1.0 / p[5])),
-                     p[5]) -
+                     p[5] / 1.) -
                  1.); // +
         //residual[2] = abs(p[3] / p[4] - 1.); // retarded, maybe try with lesser weight?
         // 1.);
@@ -121,16 +122,33 @@ void EllipseModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitiali
     VectorXd p0 = init(a);
     VectorXd p0o;
     int n;
-    if (alreadyInitialized) {
+    const int l = 12; // normal/pushed(p[0,1]) * 0.1/1.0/1.9
+    if (alreadyInitialized && 0) {
         p0o = e._p;
-        n = 2;
+        n = l + 1;
     } else {
         p0o = p0;
-        n = 1;
+        n = l;
     }
-    double p0arr[6] = {xdata.mean(), ydata.mean(), p0[2], p0[3], p0[4], p0[5]};
+    // eps var
+    double p0arr[6] = {p0[0], p0[1], p0[2], p0[3], p0[4], 1.0};
+    double p1arr[6] = {p0[0], p0[1], p0[2], p0[3], p0[4], 0.1};
+    double p2arr[6] = {p0[0], p0[1], p0[2], p0[3], p0[4], 1.9};
+    // push var
+    double p3arr[6] = {p0[6], p0[7], p0[2], p0[3], p0[4], 1.0};
+    double p4arr[6] = {p0[6], p0[7], p0[2], p0[3], p0[4], 0.1};
+    double p5arr[6] = {p0[6], p0[7], p0[2], p0[3], p0[4], 1.9};
+    // rotate var 82% ->
+    double p6arr[6] = {p0arr[0], p0arr[1], p0arr[2] + M_PI / 2, p0arr[3], p0arr[4], p0arr[5]};
+    double p7arr[6] = {p1arr[0], p1arr[1], p1arr[2] + M_PI / 2, p1arr[3], p1arr[4], p1arr[5]};
+    double p8arr[6] = {p2arr[0], p2arr[1], p2arr[2] + M_PI / 2, p2arr[3], p2arr[4], p2arr[5]};
+    double p9arr[6] = {p3arr[0], p3arr[1], p3arr[2] + M_PI / 2, p3arr[3], p3arr[4], p3arr[5]};
+    double p10arr[6] = {p4arr[0], p4arr[1], p4arr[2] + M_PI / 2, p4arr[3], p4arr[4], p4arr[5]};
+    double p11arr[6] = {p5arr[0], p5arr[1], p5arr[2] + M_PI / 2, p5arr[3], p5arr[4], p5arr[5]};
+    // alreadyInit
     double p0oarr[6] = {xdata.mean(), ydata.mean(), p0o[2], p0o[3], p0o[4], p0o[5]};
-    double *pa[2] = {p0arr, p0oarr};
+    //double *pa[l+1] = {p0arr,p1arr,p2arr,p3arr,p4arr,p5arr, p0oarr};
+    double *pa[l + 1] = {p0arr, p1arr, p2arr, p3arr, p4arr, p5arr, p6arr, p7arr, p8arr, p9arr, p10arr, p11arr, p0oarr};
     // theta variation
     /*double p1[6] = {p0[9], p0[10], p0[8], p0[3], p0[4], p0[5]};
     // eps variation
@@ -183,8 +201,8 @@ void EllipseModel::ls(Entity &e, const Aggregate &a, const bool &alreadyInitiali
     options.minimizer_progress_to_stdout = false;
     options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
     options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
-    options.initial_trust_region_radius = 1e8;                 // important
-    options.max_num_iterations = 10;
+    options.initial_trust_region_radius = 1e9;                 // important
+    options.max_num_iterations = 100;
     ceres::Solver::Summary summary[n];
     for (unsigned i = 0; i < n; i++)
         ceres::Solve(options, &problem[i], &summary[i]);

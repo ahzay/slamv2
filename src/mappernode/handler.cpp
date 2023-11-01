@@ -67,10 +67,10 @@ void Handler::preprocess_scan(Scan &scan) {
     //
     uua.clear();
     ps.reorder();
-    v->add_aggregate(aa, "green");
+    //v->add_aggregate(aa, "green");
     v->add_aggregate(ps, "red");
-    v->add_data(ps._data_vector.back(), "orange");
-    v->add_data(ps._data_vector.front(), "yellow");
+    //v->add_data(ps._data_vector.back(), "orange");
+    //v->add_data(ps._data_vector.front(), "yellow");
     /*for(const auto &e:map.entities)
         v->add_aggregate(*e._a,"orange");*/
     map.run_augment();

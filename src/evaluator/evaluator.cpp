@@ -90,14 +90,28 @@ double evaluate() {
 
 int main(int argc, char *argv[]) {
     int num = 1000;
-    double avg_accuracy = 0;
+    //double avg_accuracy = 0;
+    double sum = 0;
+    double sum_of_squares = 0;
+    int valid_entries = 0;
     for (int i = 0; i < num; i++) {
         system("./mc-simulator -5 5 -5 5 240 684 ./simulated > /dev/null");
-        system("./mappernode 1 0 50 1 0.25 0.25 1 1 100 5 3 ./simulated > /dev/null");
+        system("./mappernode 1 0 50 1 100 100 100 1 100 5 1 $(nproc) ./simulated > /dev/null");
+        system("mv 0.png simulated/$(date +%s).png");
         double accuracy = evaluate();
         cout << "accuracy is: " << accuracy << endl;
-        if (accuracy != 0 && isfinite(accuracy))
-            avg_accuracy += accuracy / num;
-        cout << "average accuracy is: " << avg_accuracy << endl;
+        if (accuracy != 0 && isfinite(accuracy)) {
+            sum += accuracy;
+            sum_of_squares += pow(accuracy, 2);
+            valid_entries++;
+
+            double avg_accuracy = sum / valid_entries;
+            double variance = (sum_of_squares - pow(sum, 2) / valid_entries) / valid_entries;
+            double std_dev = sqrt(variance);
+            double std_error = std_dev / sqrt(valid_entries);
+
+            cout << "average accuracy is: " << avg_accuracy << endl;
+            cout << "standard error is: " << std_error << endl;
+        }
     }
 }

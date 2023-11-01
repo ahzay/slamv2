@@ -20,8 +20,8 @@ void Simulator::gen_params() {
     p(0) = get_rand(o.xmin, o.xmax);
     p(1) = get_rand(o.ymin, o.ymax);
     p(2) = get_rand(-M_PI, M_PI);
-    p(3) = get_rand(0.25, (o.xmax - o.xmin) / 2);
-    p(4) = get_rand(0.25, (o.ymax - o.ymin) / 2);
+    p(3) = get_rand(0.5, (o.xmax - o.xmin) / 4);
+    p(4) = get_rand(0.5, (o.ymax - o.ymin) / 4);
     p(5) = get_rand(0.1, 1.9);
     ofstream of("ground_truth.txt");
     of<<p.transpose();

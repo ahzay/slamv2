@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     //models.push_back(line_model);
     Handler h(models, options);
     int cnt = 0;
-    system("rm *png *gpt");
+    system("rm -f *png *gpt > /dev/null");
     for (auto &scan: scans) {
         Visualizer v(cnt++);
         h.v = &v; // IMPORTANT TODO: make this safe
@@ -68,8 +68,8 @@ int main(int argc, char *argv[]) {
             }
         //
         v.save();
-        //system(("gnuplot " + to_string(cnt - 1) + ".gpt > " +
-        //        to_string(cnt - 1) + ".png").c_str());
+        system(("gnuplot " + to_string(cnt - 1) + ".gpt > " +
+                to_string(cnt - 1) + ".png").c_str());
     }
     // render plots
     auto stop = std::chrono::high_resolution_clock::now();
