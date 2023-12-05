@@ -11,6 +11,11 @@
 
 using namespace Eigen;
 
+struct MWI{ // measurement with index
+    Vector2d m;
+    int i;
+};
+
 class Simulator {
 public:
     Simulator(CmdLineOptions options);
@@ -23,7 +28,7 @@ public:
     mt19937 generator;
     vector<Vector<double, 6>> ps; // parameters
     Vector2d l; // robot location
-    vector<Vector2d> ms; // measurements
+    vector<MWI> ms; // measurements
 
 private:
     double get_rand(double min, double max);

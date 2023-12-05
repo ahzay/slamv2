@@ -71,6 +71,23 @@ int main(int argc, char *argv[]) {
                 ofstream ofs("ground_estimate.txt");
                 ofs << e._p.transpose();
             }
+        // for segmentation
+        ofstream ofs("ground_segm_estimate.txt");
+        ofs << scan._data_vector.size() << endl; // total npts
+        // now for each point we try to find which object it belongs to
+        for (const auto &d: scan._data_vector) {
+            ofs << d._measurement.transpose() << " ";
+            // then find if it has been associated in the map
+            auto it = find_if(h.map.entities.begin(), h.map.entities.end(),
+                              [&d](const Entity &e) {
+                                  return find(e._a->_data_vector.begin(), e._a->_data_vector.end(), d) !=
+                                         e._a->_data_vector.end();
+                              });
+            if (it != h.map.entities.end()) {
+                size_t index = distance(h.map.entities.begin(), it);
+                ofs << index << endl;
+            } else ofs << -1 << endl;
+        }
         //
         v.save();
         system(("gnuplot " + to_string(cnt - 1) + ".gpt > " +

@@ -48,3 +48,6 @@ double Data::distance_to(const Data &o) const {
     return (get_xy() - o.get_xy()).norm();
 }
 
+bool Data::operator==(const Data& other) const{
+    return other.get_xy().isApprox(get_xy());
+}

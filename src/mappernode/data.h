@@ -27,6 +27,7 @@ public:
 
     Vector2d get_rotated_measurement() const;
 
+    bool operator==(const Data& other) const;
     // attributes
     Vector2d _measurement;          // data (measurement)
     Vector3d _pose;          // position at measurement

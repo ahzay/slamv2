@@ -7,6 +7,7 @@
 #include <utility>
 #include <cmath>
 #include <omp.h>
+
 Simulator::Simulator(CmdLineOptions options) : o(std::move(options)) {
     generator.seed(std::random_device()());
 }
@@ -65,70 +66,52 @@ void Simulator::gen_all() {
     ofstream of("ground_truth.txt");
     if (of.is_open()) {
         of << ps.size() << endl;  // Write the number of ellipses to the first line
-        for (const auto &p: ps) {
-            of << p.transpose();
-            of << endl;  // New line for each ellipse
-        }
+        for (const auto &p: ps)
+            of << p.transpose() << endl;  // New line for each ellipse
     }
 }
 
 void Simulator::simulate() {
     gen_all();
-    //double heading = atan2(p(1) - l(1), p(0) - l(0));
     const double dmax = 20;//(l({0, 1}) - p({0, 1})).norm() + max(p(3), p(4));
-    /*for (double an = -M_PI; an < M_PI; an += (o.an / o.npts) * M_PI / 180.0) {
-        double e = MAXFLOAT;
-        double var_e = 1000000;
-        double d = 0;
-        while (var_e > 1e-24 && e >= 0 && d <= dmax) {
-            // calculate error
-            double x = l(0) + d * cos(an);
-            double y = l(1) + d * sin(an);
-            //double new_e = calc_e(p,x,y);
-            std::vector<double> e_values;
-            std::transform(ps.begin(), ps.end(), std::back_inserter(e_values),
-                           [this, x, y](const Vector<double, 6> &p) {
-                               return calc_e(p, x, y);
-                           });
-            double new_e = *std::min_element(e_values.begin(), e_values.end());
-            //
-            var_e = abs(new_e - e);
-            e = new_e;
-            d += min(0.01, e);
-            //cout << d << endl;
-        }
-        if (d <= dmax)
-            ms.push_back(Vector2d(d, an));
-    }*/
     const int max_size = static_cast<int>(2 * M_PI / ((o.an / o.npts) * M_PI / 180.0));
     ms.resize(max_size);  // Pre-allocate space
-    ms.assign(max_size, Vector2d(0,0));
-    #pragma omp parallel for default(none) shared(ms, ps, l, o, max_size, dmax)
+    MWI buf = {Vector2d(0, 0), -1};
+    ms.assign(max_size, buf);
+#pragma omp parallel for default(none) shared(ms, ps, l, o, max_size, dmax)
     for (int i = 0; i < max_size; ++i) {
-        double an = -M_PI + i * (o.an / o.npts) * M_PI / 180.0;
+        double an = i * (o.an / o.npts) * M_PI / 180.0;
         double e = MAXFLOAT;
         double var_e = 1000000;
         double d = 0;
+        int min_p_index = -1;
         while (var_e > 1e-24 && e > 0 && d <= dmax) {
             double x = l(0) + d * cos(an);
             double y = l(1) + d * sin(an);
             std::vector<double> e_values;
-            std::transform(ps.begin(), ps.end(), std::back_inserter(e_values),
-                           [this, x, y](const Vector<double, 6> &p) {
-                               return calc_e(p, x, y);
-                           });
-            double new_e = *std::min_element(e_values.begin(), e_values.end());
+            std::vector<Vector<double, 6>>::iterator min_p_it = ps.begin(); // Iterator to the p that gives min e
+            double min_e = std::numeric_limits<double>::max(); // Initialize with max double value
+            for (auto it = ps.begin(); it != ps.end(); ++it) {
+                double e_val = calc_e(*it, x, y);
+                e_values.push_back(e_val);
+                if (e_val < min_e) {
+                    min_e = e_val;
+                    min_p_it = it;
+                }
+            }
+            double new_e = min_e; // The minimum e value
             var_e = abs(new_e - e);
             e = new_e;
-            d += min(0.01, e);
+            d += std::min(0.01, e);
+            min_p_index = static_cast<int>(std::distance(ps.begin(), min_p_it));
         }
-        if (d <= dmax && e<=0) {
-            ms[i] = Vector2d(d, an);  // Direct assignment
+        if (d <= dmax && e <= 0) {
+            ms[i] = {Vector2d(d, an), min_p_index};  // Direct assignment
         }
     }
     // remove empty
-    ms.erase(std::remove_if(ms.begin(), ms.end(), [](const Vector2d& vec) {
-        return vec(0) == 0.0 && vec(1) == 0.0;
+    ms.erase(std::remove_if(ms.begin(), ms.end(), [](const auto &m) {
+        return m.m(0) == 0.0 && m.m(1) == 0.0;
     }), ms.end());
     // writing phase
     ofstream of(o.data_folder + "/combined_0.csv");
@@ -139,7 +122,14 @@ void Simulator::simulate() {
     of << "0.0 0.0 0.0 0.0 0.0 0.0 0.0" << endl;
     of << "," << ms.size() << endl;
     for (const auto &m: ms)
-        of << "0.0,0.0," << m(0) << "," << m(1) << endl;
+        of << "0.0,0.0," << m.m(0) << "," << m.m(1) << endl;
+    of.close();
+    of.open("ground_segm_truth.txt");
+    if (of.is_open()) {
+        of << ms.size() << endl;
+        for (const auto &m: ms)
+            of << m.m.transpose() << " " << m.i << endl;
+    }
 }
 
 double Simulator::calc_e(Vector<double, 6> p, double x, double y) {
