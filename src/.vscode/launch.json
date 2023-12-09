@@ -5,7 +5,7 @@
         "name": "C++ Debug",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/build/mappernode",
+        "program": "${workspaceFolder}/build/evaluator",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",

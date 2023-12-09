@@ -24,6 +24,7 @@ void Simulator::gen_params() {
     p(4) = get_rand(0.5, (o.ymax - o.ymin) / 4);
     p(5) = get_rand(0.1, 1.9);
     ofstream of("ground_truth.txt");
+    of<<1.<<endl;
     of<<p.transpose();
 }
 
@@ -53,7 +54,7 @@ void Simulator::simulate() {
             double f1 = ((x - p(0)) * cos(p(2)) + (y - p(1)) * sin(p(2))) / p(3);
             double f2 = ((x - p(0)) * sin(p(2)) - (y - p(1)) * cos(p(2))) / p(4);
             double buf = pow(pow(f1, 2.), 1. / p(5)) + pow(pow(f2, 2.), 1. / p(5));
-            double new_e = sqrt(p(3) * p(4)) * (pow(buf, p(5)) - 1.);
+            double new_e = (pow(buf, p(5)) - 1.);
             var_e = abs(new_e - e);
             e = new_e;
             d += min(0.01, e);
@@ -71,7 +72,9 @@ void Simulator::simulate() {
     of << "0.0 0.0 0.0 0.0 0.0 0.0 0.0" << endl;
     of << "," << ms.size() << endl;
     for (const auto &m: ms)
-        of << "0.0,0.0," << m(0) << "," << m(1) << endl;
+        of << l(0) + m(0) * cos(m(1))<< "," <<
+              l(1) + m(0) * sin(m(1))<< "," <<
+              m(0) << "," << m(1) << endl;
 
 }
 

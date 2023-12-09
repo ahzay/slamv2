@@ -66,13 +66,15 @@ int main(int argc, char *argv[]) {
             }
         }
         // also write out the results
+        ofstream ofs("ground_estimate.txt");
+        ofs << h.map.entities.size();
         for (const auto &e: h.map.entities)
             if (e.m->_parameter_count == 6) {
-                ofstream ofs("ground_estimate.txt");
-                ofs << e._p.transpose();
+                ofs << e._p.transpose()<<endl;
             }
+        ofs.close();
         // for segmentation
-        ofstream ofs("ground_segm_estimate.txt");
+        ofs.open("ground_segm_estimate.txt");
         ofs << scan._data_vector.size() << endl; // total npts
         // now for each point we try to find which object it belongs to
         for (const auto &d: scan._data_vector) {

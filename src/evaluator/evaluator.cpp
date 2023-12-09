@@ -6,6 +6,7 @@
 #include <cmath>
 #include <string>
 #include <algorithm>
+#include <tuple>
 #include "../mappernode/tools.h"
 
 using namespace std;
@@ -41,8 +42,10 @@ Vector<double, 6> load_params(string fn) {
     if (!f.is_open())
         throw runtime_error("failed to open file");
     Vector<double, 6> v;
+    f>>v(0);
     for (int i = 0; i < 6; i++)
         f >> v(i);
+    // cout<<"Loaded: " << v.transpose()<<endl;
     return v;
 }
 
@@ -65,7 +68,7 @@ bool is_inside_se(const Vector<double, 6> &p, Point t) {
     else return false;
 }
 
-double evaluate() {
+std::tuple<double, double> evaluate() {
     Vector<double, 6> est, tru;
     tru = load_params("ground_truth.txt");
     est = load_params("ground_estimate.txt");
@@ -75,43 +78,61 @@ double evaluate() {
     double precision = 1e-2;
     int inside_tru = 0;
     int inside_both = 0;
+    int inside_est = 0;
+    int inside_est_out_tru = 0;
     for (double x = r.bottom_left.x; x <= r.top_right.x; x += precision) {
         for (double y = r.bottom_left.y; y <= r.top_right.y; y += precision) {
             Point p({x, y});
+            if (is_inside_se(est, p)) {
+                inside_est++;
+                if (is_inside_se(tru, p)) {
+                    inside_both++;
+                } else {
+                    inside_est_out_tru++;
+                }
+            }
             if (is_inside_se(tru, p)) {
                 inside_tru++;
-                if (is_inside_se(est, p))
-                    inside_both++;
             }
         }
     }
-    return fmod(((double) inside_both / (double) inside_tru), 1.);
+    double ratio1 = fmod(((double) inside_both / (double) inside_tru), 1.);
+    double ratio2 = (double) inside_est_out_tru / (double) inside_est;
+    return std::make_tuple(ratio1, ratio2);
 }
+
 
 int main(int argc, char *argv[]) {
     int num = 1000;
-    //double avg_accuracy = 0;
-    double sum = 0;
-    double sum_of_squares = 0;
+    double sum1 = 0, sum2 = 0;
+    double sum_of_squares1 = 0, sum_of_squares2 = 0;
     int valid_entries = 0;
     for (int i = 0; i < num; i++) {
         system("./mc-simulator -5 5 -5 5 240 684 ./simulated > /dev/null");
         system("./mappernode 1 0 50 1 100 100 100 1 100 5 1 $(nproc) ./simulated > /dev/null");
         system("mv 0.png simulated/$(date +%s).png");
-        double accuracy = evaluate();
-        cout << "accuracy is: " << accuracy << endl;
-        if (accuracy != 0 && isfinite(accuracy)) {
-            sum += accuracy;
-            sum_of_squares += pow(accuracy, 2);
+        std::tuple<double, double> accuracies = evaluate();
+        double accuracy1 = std::get<0>(accuracies);
+        double accuracy2 = std::get<1>(accuracies);
+        cout << "accuracy1 is: " << accuracy1 << ", accuracy2 is: " << accuracy2 << endl;
+        if (accuracy1 != 0 && isfinite(accuracy1) && accuracy2 != 0 && isfinite(accuracy2)) {
+            sum1 += accuracy1;
+            sum2 += accuracy2;
+            sum_of_squares1 += pow(accuracy1, 2);
+            sum_of_squares2 += pow(accuracy2, 2);
             valid_entries++;
 
-            double avg_accuracy = sum / valid_entries;
-            double variance = (sum_of_squares - pow(sum, 2) / valid_entries) / valid_entries;
-            double std_dev = sqrt(variance);
-            double std_error = std_dev / sqrt(valid_entries);
+            double avg_accuracy1 = sum1 / valid_entries;
+            double avg_accuracy2 = sum2 / valid_entries;
+            double variance1 = (sum_of_squares1 - pow(sum1, 2) / valid_entries) / valid_entries;
+            double variance2 = (sum_of_squares2 - pow(sum2, 2) / valid_entries) / valid_entries;
+            double std_dev1 = sqrt(variance1);
+            double std_dev2 = sqrt(variance2);
+            double std_error1 = std_dev1 / sqrt(valid_entries);
+            double std_error2 = std_dev2 / sqrt(valid_entries);
 
-            cout << "average accuracy is: " << avg_accuracy << endl;
-            cout << "standard error is: " << std_error << endl;
+            cout << "average accuracy1 is: " << avg_accuracy1 << ", average accuracy2 is: " << avg_accuracy2 << endl;
+            cout << "standard error1 is: " << std_error1 << ", standard error2 is: " << std_error2 << endl;
         }
     }
 }
